@@ -23,14 +23,14 @@ const char *ap_ssid = "APULA_CAM";
 const char *ap_pass = "FireSafe2026";
 
 WebSocketsServer webSocket = WebSocketsServer(82);
-httpd_handle_t camera_httpd = NULL;
+httpd_handle_t apula_camera_httpd = NULL;
 
 #define PART_BOUNDARY "123456789000000000000987654321"
 static const char* _STREAM_CONTENT_TYPE = "multipart/x-mixed-replace;boundary=" PART_BOUNDARY;
 static const char* _STREAM_BOUNDARY = "\r\n--" PART_BOUNDARY "\r\n";
 static const char* _STREAM_PART = "Content-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n";
 
-static esp_err_t stream_handler(httpd_req_t *req){
+static esp_err_t apula_stream_handler(httpd_req_t *req){
   camera_fb_t * fb = NULL;
   esp_err_t res = ESP_OK;
   size_t _jpg_buf_len = 0;
@@ -86,20 +86,20 @@ static esp_err_t stream_handler(httpd_req_t *req){
   return res;
 }
 
-void startCameraServer(){
+void startApulaCameraServer(){
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.server_port = 81;
 
   httpd_uri_t stream_uri = {
     .uri       = "/stream",
     .method    = HTTP_GET,
-    .handler   = stream_handler,
+    .handler   = apula_stream_handler,
     .user_ctx  = NULL
   };
 
-  Serial.printf("Starting web server on port: '%d'\n", config.server_port);
-  if (httpd_start(&camera_httpd, &config) == ESP_OK) {
-    httpd_register_uri_handler(camera_httpd, &stream_uri);
+  Serial.printf("Starting APULA Cam server on port: '%d'\n", config.server_port);
+  if (httpd_start(&apula_camera_httpd, &config) == ESP_OK) {
+    httpd_register_uri_handler(apula_camera_httpd, &stream_uri);
   }
 }
 
@@ -167,7 +167,7 @@ void setup() {
 
   // Start Servers
   webSocket.begin();
-  startCameraServer();
+  startApulaCameraServer();
   
   Serial.println("APULA Unified Firmware Ready!");
 }

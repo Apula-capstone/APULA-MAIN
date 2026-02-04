@@ -98,15 +98,16 @@ const App: React.FC = () => {
     }
   }, [isTestActive]);
 
-  const connectWirelessSensors = (ssid: string, pass: string) => {
+  const connectWirelessSensors = (ipOrSsid: string, pass: string) => {
     if (sensorSocketRef.current) sensorSocketRef.current.close();
     
     setConnection(ConnectionState.CONNECTING);
     try {
-      // If the user provided an IP address (like 192.168.x.x), use it.
-      // Otherwise, assume the default ESP32 AP IP (192.168.4.1)
-      const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ssid);
-      const targetIp = isIp ? ssid : "192.168.4.1"; 
+      // Check if input is a valid IP address. If not, default to ESP32 AP IP.
+      const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ipOrSsid);
+      const targetIp = isIp ? ipOrSsid : "192.168.4.1"; 
+      
+      console.log(`Attempting connection to ${targetIp}...`);
       setActiveIp(targetIp);
       
       const socket = new WebSocket(`ws://${targetIp}:82`);
@@ -115,7 +116,7 @@ const App: React.FC = () => {
         setConnection(ConnectionState.CONNECTED);
         setConnectionMode('wireless');
         setSensors(prev => prev.map(s => ({ ...s, status: SensorStatus.READY })));
-        console.log(`Connected to ${ssid}`);
+        console.log(`Connected to ${targetIp}`);
       };
 
       socket.onmessage = (event) => {
@@ -127,8 +128,9 @@ const App: React.FC = () => {
         setSensors(INITIAL_SENSORS);
       };
 
-      socket.onerror = () => {
+      socket.onerror = (error) => {
         setConnection(ConnectionState.ERROR);
+        console.error("WebSocket Error:", error);
       };
 
       sensorSocketRef.current = socket;

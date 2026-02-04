@@ -63,17 +63,17 @@ const ArduinoConnect: React.FC<Props> = ({ state, onConnect, onDisconnect, label
         <div className="bg-black/40 border-2 border-white/5 rounded-2xl p-4 md:p-6 transition-all group-hover:border-white/10">
           <div className="grid grid-cols-1 gap-4 mb-4">
             <div>
-              <label className="text-[9px] font-bold text-stone-500 uppercase mb-2 block tracking-widest">Connection Address (IP or SSID)</label>
+              <label className="text-[9px] font-bold text-stone-500 uppercase mb-2 block tracking-widest">System IP Address (or Hotspot SSID)</label>
               <input 
                 type="text" 
                 value={ssid} 
                 onChange={(e) => setSsid(e.target.value)}
                 disabled={state === ConnectionState.CONNECTED}
-                placeholder="e.g. 192.168.1.50 or APULA_FIRE_SYSTEM"
+                placeholder="e.g. 192.168.1.50"
                 className="w-full bg-stone-800 text-white font-bold px-4 py-2 md:py-3 rounded-xl border-2 border-white/5 focus:border-orange-600 outline-none transition-all text-xs md:text-sm"
               />
               <p className="text-[8px] text-stone-500 mt-2 italic">
-                * Use <span className="text-orange-500">192.168.4.1</span> if connected to ESP32 Hotspot directly.
+                * Enter the <span className="text-orange-500">IP Address</span> shown in your Arduino Serial Monitor.
               </p>
             </div>
             <div>

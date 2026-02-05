@@ -10,11 +10,7 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ ipAddress = "10.18.179.30" }) =
   
   const streamUrl = `http://${ipAddress}:81/stream`;
 
-  // Determine if we are likely in a browser vs electron
-  const isBrowser = typeof window !== 'undefined' && !window.process?.versions?.electron;
-  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
-  const mixedContentIssue = isBrowser && isHttps;
-
+  // Force automatic loading attempt
   return (
     <div className="bg-stone-900 rounded-[30px] p-6 border border-white/5 overflow-hidden relative group">
       <div className="flex justify-between items-center mb-4">
@@ -38,52 +34,46 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ ipAddress = "10.18.179.30" }) =
           </div>
         )}
         
-        {mixedContentIssue ? (
-          <div className="flex flex-col items-center gap-3 text-orange-500/80 px-6 text-center">
-            <i className="fa-solid fa-shield-halved text-4xl mb-2"></i>
-            <p className="text-[10px] font-black uppercase tracking-widest">
-              HTTPS Security Block
+        <img 
+          src={streamUrl} 
+          alt="ESP32-CAM Stream" 
+          className={`w-full h-full object-cover ${isError ? 'hidden' : 'block'}`}
+          onLoad={() => {
+            setIsLoading(false);
+            setIsError(false);
+          }}
+          onError={() => { 
+            // If it fails, we keep showing the loading or error state
+            // But we don't block the initial attempt with security warnings
+            setIsError(true); 
+            setIsLoading(false); 
+          }}
+        />
+
+        {isError && (
+          <div className="flex flex-col items-center gap-3 text-stone-600 px-6 text-center">
+            <i className="fa-solid fa-video-slash text-4xl"></i>
+            <p className="text-[10px] font-black uppercase tracking-widest text-center">
+              Stream Blocked or Offline<br/>
+              <span className="text-stone-800 text-[8px]">HTTP streams often require manual authorization on HTTPS sites</span>
             </p>
-            <p className="text-[9px] font-bold text-stone-500 leading-relaxed">
-              Browsers block local camera streams over HTTPS. <br/>
-              Use the <span className="text-white">Windows App</span> or <span className="text-white">Android App</span> for full video support.
-            </p>
-            <div className="flex flex-col gap-2 w-full px-8">
+            <div className="flex flex-col gap-2 w-full mt-2">
               <a 
                 href={streamUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-[9px] font-black bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-full transition-all uppercase tracking-widest"
               >
-                1. Open Stream in New Tab
+                1. Authorize Stream
               </a>
-              <p className="text-[8px] text-stone-600 italic">
-                (After opening, come back here to see if the feed appears)
-              </p>
+              <button 
+                onClick={() => { setIsError(false); setIsLoading(true); }}
+                className="text-[9px] font-black bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-full transition-all uppercase tracking-widest"
+              >
+                2. Retry View
+              </button>
             </div>
           </div>
-        ) : isError ? (
-          <div className="flex flex-col items-center gap-3 text-stone-600">
-            <i className="fa-solid fa-video-slash text-4xl"></i>
-            <p className="text-[10px] font-black uppercase tracking-widest text-center px-4">
-              Camera Not Detected<br/>
-              <span className="text-stone-800">Check WiFi Connection</span>
-            </p>
-            <button 
-              onClick={() => { setIsError(false); setIsLoading(true); }}
-              className="mt-2 text-[9px] font-black bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-full transition-all uppercase tracking-widest"
-            >
-              Retry Connection
-            </button>
-          </div>
-        ) : (
-          <img 
-            src={streamUrl} 
-            alt="ESP32-CAM Stream" 
-            className="w-full h-full object-cover"
-            onLoad={() => setIsLoading(false)}
-            onError={() => { setIsError(true); setIsLoading(false); }}
-          />
         )}
         
         {/* Overlay Info */}

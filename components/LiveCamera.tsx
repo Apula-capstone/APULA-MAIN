@@ -4,7 +4,7 @@ interface LiveCameraProps {
   ipAddress?: string;
 }
 
-const LiveCamera: React.FC<LiveCameraProps> = ({ ipAddress = "192.168.4.1" }) => {
+const LiveCamera: React.FC<LiveCameraProps> = ({ ipAddress = "10.18.179.30" }) => {
   const [isError, setIsError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -48,14 +48,19 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ ipAddress = "192.168.4.1" }) =>
               Browsers block local camera streams over HTTPS. <br/>
               Use the <span className="text-white">Windows App</span> or <span className="text-white">Android App</span> for full video support.
             </p>
-            <a 
-              href={streamUrl} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="mt-2 text-[9px] font-black bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-full transition-all uppercase tracking-widest"
-            >
-              Open Stream Separately
-            </a>
+            <div className="flex flex-col gap-2 w-full px-8">
+              <a 
+                href={streamUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-[9px] font-black bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-full transition-all uppercase tracking-widest"
+              >
+                1. Open Stream in New Tab
+              </a>
+              <p className="text-[8px] text-stone-600 italic">
+                (After opening, come back here to see if the feed appears)
+              </p>
+            </div>
           </div>
         ) : isError ? (
           <div className="flex flex-col items-center gap-3 text-stone-600">

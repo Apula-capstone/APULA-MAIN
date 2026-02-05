@@ -28,7 +28,7 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [fireIncidentCount, setFireIncidentCount] = useState(0);
   const [connection, setConnection] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
-  const [activeIp, setActiveIp] = useState("192.168.4.1");
+  const [activeIp, setActiveIp] = useState("10.18.179.30");
   const [isAlarmActive, setIsAlarmActive] = useState(false);
   const [isTestActive, setIsTestActive] = useState(false);
   const [connectionMode, setConnectionMode] = useState<'wireless' | 'wired'>('wireless');

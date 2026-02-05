@@ -11,7 +11,7 @@ interface Props {
   defaultPass?: string;
 }
 
-const ArduinoConnect: React.FC<Props> = ({ state, onConnect, onDisconnect, label, defaultSsid = 'APULA_FIRE_SYSTEM', defaultPass = 'FireSafe2026' }) => {
+const ArduinoConnect: React.FC<Props> = ({ state, onConnect, onDisconnect, label, defaultSsid = '10.18.179.30', defaultPass = 'FireSafe2026' }) => {
   const [ssid, setSsid] = React.useState(defaultSsid);
   const [pass, setPass] = React.useState(defaultPass);
   
@@ -29,6 +29,8 @@ const ArduinoConnect: React.FC<Props> = ({ state, onConnect, onDisconnect, label
           <p className="text-[9px] text-stone-400 mt-1 leading-relaxed">
             Web browsers block local WiFi connections on HTTPS websites. 
             <span className="text-white"> Please use the Windows EXE or Android App</span> for full functionality.
+            <br/>
+            <a href="https://github.com/Apula-capstone/APULA-MAIN/releases" target="_blank" className="text-orange-500 underline">Download Desktop App →</a>
           </p>
         </div>
       )}

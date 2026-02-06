@@ -28,7 +28,7 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [fireIncidentCount, setFireIncidentCount] = useState(0);
   const [connection, setConnection] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
-  const [activeIp, setActiveIp] = useState("10.18.179.30");
+  const [activeIp, setActiveIp] = useState("10.209.255.30");
   const [isAlarmActive, setIsAlarmActive] = useState(false);
   const [isTestActive, setIsTestActive] = useState(false);
   const [connectionMode, setConnectionMode] = useState<'wireless' | 'wired'>('wireless');
@@ -103,20 +103,50 @@ const App: React.FC = () => {
     
     setConnection(ConnectionState.CONNECTING);
     try {
-      // Check if input is a valid IP address. If not, default to ESP32 AP IP.
-      const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ipOrSsid);
-      const targetIp = isIp ? ipOrSsid : "192.168.4.1"; 
-      
-      console.log(`Attempting connection to ${targetIp}...`);
+      // Check if input is a valid IP address. If not, default to the user's fixed IP.
+    const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ipOrSsid);
+    let targetIp = isIp ? ipOrSsid : "10.209.255.30"; 
+    
+    console.log(`Attempting connection to ${targetIp}...`);
       setActiveIp(targetIp);
       
       const socket = new WebSocket(`ws://${targetIp}:82`);
       
+      let connectionTimeout = setTimeout(() => {
+        if (socket.readyState !== WebSocket.OPEN) {
+          console.log("Primary IP timed out. Trying AP Mode IP (192.168.4.1)...");
+          socket.close();
+          tryAPFallback();
+        }
+      }, 3000);
+
+      const tryAPFallback = () => {
+        const apIp = "192.168.4.1";
+        setActiveIp(apIp);
+        const apSocket = new WebSocket(`ws://${apIp}:82`);
+        
+        apSocket.onopen = () => {
+          setConnection(ConnectionState.CONNECTED);
+          setConnectionMode('wireless');
+          setSensors(prev => prev.map(s => ({ ...s, status: SensorStatus.READY })));
+          console.log(`Connected to AP Mode: ${apIp}`);
+        };
+
+        apSocket.onmessage = (event) => processSensorData(event.data);
+        apSocket.onclose = () => {
+          setConnection(ConnectionState.DISCONNECTED);
+          setSensors(INITIAL_SENSORS);
+        };
+        apSocket.onerror = () => setConnection(ConnectionState.ERROR);
+        sensorSocketRef.current = apSocket;
+      };
+
       socket.onopen = () => {
+        clearTimeout(connectionTimeout);
         setConnection(ConnectionState.CONNECTED);
         setConnectionMode('wireless');
         setSensors(prev => prev.map(s => ({ ...s, status: SensorStatus.READY })));
-        console.log(`Connected to ${targetIp}`);
+        console.log(`Connected to Station Mode: ${targetIp}`);
       };
 
       socket.onmessage = (event) => {
@@ -177,6 +207,18 @@ const App: React.FC = () => {
       status: SensorStatus.FIRE_DETECTED,
       lastUpdated: 'TEST_MODE'
     } : s));
+
+    // If connected via Serial, send TEST_PANIC command to Arduino
+    if (connection === ConnectionState.CONNECTED && connectionMode === 'wired' && serialPortRef.current) {
+      const writer = serialPortRef.current.writable.getWriter();
+      const encoder = new TextEncoder();
+      writer.write(encoder.encode("TEST_PANIC\n"));
+      writer.releaseLock();
+    }
+    // If connected via Wireless, send TEST_PANIC command to ESP32
+    else if (connection === ConnectionState.CONNECTED && connectionMode === 'wireless' && sensorSocketRef.current) {
+      sensorSocketRef.current.send("TEST_PANIC");
+    }
   };
 
   const acknowledgeAlarm = () => {
@@ -214,7 +256,32 @@ const App: React.FC = () => {
     <div className={`transition-all duration-700 ease-out ${showDashboard ? 'opacity-100 scale-100' : 'opacity-100 scale-100'}`}>
       <AlarmSystem isActive={isAlarmActive} onAcknowledge={acknowledgeAlarm} />
       <div className="max-w-[1700px] mx-auto px-4 pb-12 overflow-x-hidden">
-        <Header />
+        <header className="bg-orange-600 shadow-2xl p-4 md:p-6 rounded-b-[30px] md:rounded-b-[40px] flex flex-col md:flex-row items-center justify-between border-b-4 md:border-b-8 border-orange-800">
+          <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-0">
+            <div className="bg-white p-2 md:p-3 rounded-xl md:rounded-2xl shadow-inner">
+              <i className="fa-solid fa-fire-extinguisher text-2xl md:text-4xl text-orange-600"></i>
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-white leading-none">APULA</h1>
+              <p className="text-[8px] md:text-[10px] font-bold text-orange-200 uppercase tracking-widest mt-1 opacity-80">Prevention Unit // ESP32 Sync</p>
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-center md:items-end gap-3">
+            <button 
+              onClick={() => setIsMobileAppMode(true)}
+              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl border border-white/20 transition-all font-black uppercase tracking-widest text-[9px] flex items-center gap-2 group"
+            >
+              <i className="fa-solid fa-download group-hover:translate-y-0.5 transition-transform"></i>
+              Downloads
+            </button>
+            <div className="flex flex-col items-center md:items-end">
+              <div className="text-2xl md:text-3xl font-black text-white tabular-nums drop-shadow-md leading-none">
+                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+              </div>
+            </div>
+          </div>
+        </header>
         
         {/* Navigation Controls */}
         <div className="mt-6 flex justify-end gap-3 md:gap-4">
@@ -224,14 +291,6 @@ const App: React.FC = () => {
           >
             <i className="fa-solid fa-book-open group-hover:scale-110 transition-transform"></i>
             System Guides
-          </button>
-          
-          <button 
-            onClick={() => setIsMobileAppMode(true)}
-            className="bg-stone-900 hover:bg-orange-600 text-orange-500 hover:text-white px-5 md:px-8 py-3 md:py-4 rounded-2xl border-2 border-orange-600/30 hover:border-orange-500 transition-all font-black uppercase tracking-widest text-[9px] md:text-xs flex items-center gap-3 shadow-lg group"
-          >
-            <i className="fa-brands fa-android group-hover:scale-110 transition-transform"></i>
-            Mobile App
           </button>
         </div>
         

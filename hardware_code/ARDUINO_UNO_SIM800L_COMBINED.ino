@@ -4,8 +4,9 @@
 // Features: 
 // 1. Real-time Analog Sensor Reading (A0, A1, A2)
 // 2. Automated SMS Alerts via SIM800L
-// 3. Serial Telemetry for Dashboard Graphing
-// 4. Local Buzzer Alarm
+// 3. Automated Voice Call via SIM800L
+// 4. Serial Telemetry for Dashboard Graphing
+// 5. Local Buzzer Alarm
 
 #include <SoftwareSerial.h>
 
@@ -28,7 +29,7 @@ String EMERGENCY_PHONE = "+1234567890"; // Change via Serial or hardcode
 bool smsSent = false;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200); // Higher baud for dashboard sync
   sim800l.begin(9600);
   
   pinMode(BUZZER_PIN, OUTPUT);
@@ -58,9 +59,11 @@ void loop() {
     digitalWrite(BUZZER_PIN, HIGH);
     digitalWrite(STATUS_LED, HIGH);
     
-    // Send SMS if not already sent for this incident
+    // Send SMS and Call if not already sent for this incident
     if (!smsSent) {
+      Serial.println("SIM800L:TRIGGER_ALARM");
       sendSMS("ALERT: FIRE DETECTED! APULA System has triggered an emergency alarm.");
+      makeCall(); // Call the emergency number
       smsSent = true;
     }
   } else {
@@ -78,32 +81,46 @@ void loop() {
   Serial.print(",");
   Serial.println(s3);
 
-  // Handle Serial Commands (e.g., update phone number)
+  // Handle Serial Commands (e.g., update phone number or manual trigger)
   if (Serial.available()) {
     String cmd = Serial.readStringUntil('\n');
+    cmd.trim();
     if (cmd.startsWith("PHONE:")) {
       EMERGENCY_PHONE = cmd.substring(6);
       Serial.print("CONFIG:PHONE_UPDATED:");
       Serial.println(EMERGENCY_PHONE);
+    } else if (cmd == "TEST_PANIC") {
+      // Manual trigger from Dashboard Simulation button
+      Serial.println("SIM800L:TEST_TRIGGER");
+      sendSMS("TEST ALERT: APULA System manual simulation triggered.");
+      makeCall();
     }
   }
 
-  delay(100); // Telemetry update rate
+  delay(100); 
 }
 
 void sendSMS(String message) {
-  Serial.println("SIM800L: SENDING SMS...");
+  Serial.print("SIM800L:SENDING_SMS_TO:");
+  Serial.println(EMERGENCY_PHONE);
   
+  sim800l.println("AT+CMGF=1"); // SMS text mode
+  delay(200);
   sim800l.print("AT+CMGS=\"");
   sim800l.print(EMERGENCY_PHONE);
   sim800l.println("\"");
-  delay(500);
-  
+  delay(200);
   sim800l.print(message);
-  delay(500);
+  delay(200);
+  sim800l.write(26); // CTRL+Z
+  delay(1000);
+  Serial.println("SIM800L:SMS_DISPATCHED");
+}
+
+void makeCall() {
+  Serial.print("SIM800L:CALLING:");
+  Serial.println(EMERGENCY_PHONE);
   
-  sim800l.write(26); // ASCII code for CTRL+Z to send
-  delay(3000);
-  
-  Serial.println("SIM800L: SMS DISPATCHED");
+  sim800l.println("ATD" + EMERGENCY_PHONE + ";"); // Dial number
+  // The call will continue in the background
 }

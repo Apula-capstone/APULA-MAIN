@@ -37,14 +37,14 @@ const DownloadPage: React.FC<Props> = ({ onBack }) => {
                 Includes full dashboard and offline monitoring.
               </p>
               <a 
-                href="./APULA_Fire_System_Portable.zip" 
+                href="./APULA_WINDOWS.zip" 
                 download
                 className="w-full inline-flex items-center justify-center gap-4 bg-white text-stone-950 font-black px-6 py-4 rounded-2xl uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl text-sm"
               >
                 <i className="fa-solid fa-download"></i>
                 Download for Windows
               </a>
-              <p className="mt-4 text-[9px] font-black uppercase tracking-widest opacity-40 italic">Standalone EXE inside ZIP (v2.7.0 Updated)</p>
+              <p className="mt-4 text-[9px] font-black uppercase tracking-widest opacity-40 italic">Standalone EXE inside ZIP (v2.8.0 Updated)</p>
             </div>
           </section>
 

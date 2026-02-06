@@ -11,7 +11,7 @@ interface Props {
   defaultPass?: string;
 }
 
-const ArduinoConnect: React.FC<Props> = ({ state, onConnect, onDisconnect, label, defaultSsid = '10.18.179.30', defaultPass = 'FireSafe2026' }) => {
+const ArduinoConnect: React.FC<Props> = ({ state, onConnect, onDisconnect, label, defaultSsid = '10.209.255.30', defaultPass = 'FireSafe2026' }) => {
   const [ssid, setSsid] = React.useState(defaultSsid);
   const [pass, setPass] = React.useState(defaultPass);
   

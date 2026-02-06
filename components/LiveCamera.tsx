@@ -4,11 +4,24 @@ interface LiveCameraProps {
   ipAddress?: string;
 }
 
-const LiveCamera: React.FC<LiveCameraProps> = ({ ipAddress = "10.18.179.30" }) => {
+const LiveCamera: React.FC<LiveCameraProps> = ({ ipAddress = "10.209.255.30" }) => {
   const [isError, setIsError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentIp, setCurrentIp] = useState(ipAddress);
   
-  const streamUrl = `http://${ipAddress}:81/stream`;
+  const streamUrl = `http://${currentIp}:81/stream`;
+
+  // Automatic fallback to AP mode IP if primary fails
+  const handleStreamError = () => {
+    if (currentIp === "10.209.255.30") {
+      console.log("Primary camera stream failed. Falling back to AP IP 192.168.4.1");
+      setCurrentIp("192.168.4.1");
+      setIsLoading(true);
+    } else {
+      setIsError(true);
+      setIsLoading(false);
+    }
+  };
 
   // Force automatic loading attempt
   return (
@@ -42,12 +55,7 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ ipAddress = "10.18.179.30" }) =
             setIsLoading(false);
             setIsError(false);
           }}
-          onError={() => { 
-            // If it fails, we keep showing the loading or error state
-            // But we don't block the initial attempt with security warnings
-            setIsError(true); 
-            setIsLoading(false); 
-          }}
+          onError={handleStreamError}
         />
 
         {isError && (
@@ -55,17 +63,21 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ ipAddress = "10.18.179.30" }) =
             <i className="fa-solid fa-video-slash text-4xl"></i>
             <p className="text-[10px] font-black uppercase tracking-widest text-center">
               Stream Blocked or Offline<br/>
-              <span className="text-stone-800 text-[8px]">HTTP streams often require manual authorization on HTTPS sites</span>
+              <span className="text-stone-800 text-[8px]">Mobile browsers & HTTPS often block camera feeds by default</span>
             </p>
             <div className="flex flex-col gap-2 w-full mt-2">
               <a 
                 href={streamUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-[9px] font-black bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-full transition-all uppercase tracking-widest"
+                className="text-[9px] font-black bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-full transition-all uppercase tracking-widest flex items-center justify-center gap-2"
               >
-                1. Authorize Stream
+                <i className="fa-solid fa-external-link text-[8px]"></i>
+                1. Tap to Authorize
               </a>
+              <p className="text-[7px] text-stone-700 font-bold uppercase tracking-tight">
+                (Click 'Allow' or 'Advanced/Proceed' if prompted)
+              </p>
               <button 
                 onClick={() => { setIsError(false); setIsLoading(true); }}
                 className="text-[9px] font-black bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-full transition-all uppercase tracking-widest"
@@ -78,10 +90,15 @@ const LiveCamera: React.FC<LiveCameraProps> = ({ ipAddress = "10.18.179.30" }) =
         
         {/* Overlay Info */}
         {!isError && !isLoading && (
-          <div className="absolute bottom-4 left-4 flex gap-2">
+          <div className="absolute bottom-4 left-4 flex flex-col gap-2">
             <div className="bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full flex items-center gap-2">
               <i className="fa-solid fa-wifi text-[10px] text-orange-500"></i>
-              <span className="text-[9px] font-black text-white uppercase tracking-tight">APULA_CAM</span>
+              <span className="text-[9px] font-black text-white uppercase tracking-tight">
+                {currentIp === "192.168.4.1" ? "AP MODE (LOCAL)" : "STATION MODE (WIFI)"}
+              </span>
+            </div>
+            <div className="bg-black/40 backdrop-blur-md px-3 py-0.5 rounded-full w-fit">
+               <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest">{currentIp}</span>
             </div>
           </div>
         )}

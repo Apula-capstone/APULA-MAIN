@@ -255,28 +255,28 @@ const App: React.FC = () => {
   return (
     <div className={`transition-all duration-700 ease-out ${showDashboard ? 'opacity-100 scale-100' : 'opacity-100 scale-100'}`}>
       <AlarmSystem isActive={isAlarmActive} onAcknowledge={acknowledgeAlarm} />
-      <div className="max-w-[800px] mx-auto px-4 pb-12 overflow-x-hidden">
-        <header className="bg-orange-600 shadow-2xl p-4 rounded-b-[30px] flex flex-col items-center justify-between border-b-4 border-orange-800">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-white p-2 rounded-xl shadow-inner">
-              <i className="fa-solid fa-fire-extinguisher text-2xl text-orange-600"></i>
+      <div className="max-w-[1400px] mx-auto px-4 pb-12 overflow-x-hidden">
+        <header className="bg-orange-600 shadow-2xl p-6 rounded-b-[40px] flex flex-row items-center justify-between border-b-4 border-orange-800">
+          <div className="flex items-center gap-4">
+            <div className="bg-white p-3 rounded-2xl shadow-inner">
+              <i className="fa-solid fa-fire-extinguisher text-3xl text-orange-600"></i>
             </div>
             <div>
-              <h1 className="text-3xl font-black tracking-tighter text-white leading-none">APULA</h1>
-              <p className="text-[8px] font-bold text-orange-200 uppercase tracking-widest mt-1 opacity-80">Prevention Unit // ESP32 Sync</p>
+              <h1 className="text-4xl font-black tracking-tighter text-white leading-none">APULA</h1>
+              <p className="text-[10px] font-bold text-orange-200 uppercase tracking-widest mt-1 opacity-80">Prevention Unit // ESP32 Sync</p>
             </div>
           </div>
           
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-row items-center gap-6">
             <button 
               onClick={() => setIsMobileAppMode(true)}
-              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl border border-white/20 transition-all font-black uppercase tracking-widest text-[9px] flex items-center gap-2 group"
+              className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-2xl border border-white/20 transition-all font-black uppercase tracking-widest text-[11px] flex items-center gap-2 group"
             >
               <i className="fa-solid fa-download group-hover:translate-y-0.5 transition-transform"></i>
               Downloads
             </button>
-            <div className="flex flex-col items-center">
-              <div className="text-2xl font-black text-white tabular-nums drop-shadow-md leading-none">
+            <div className="flex flex-col items-end">
+              <div className="text-3xl font-black text-white tabular-nums drop-shadow-md leading-none">
                 {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
               </div>
             </div>
@@ -284,22 +284,22 @@ const App: React.FC = () => {
         </header>
         
         {/* Navigation Controls */}
-        <div className="mt-6 flex justify-center gap-3">
+        <div className="mt-8 flex justify-center gap-4">
           <button 
             onClick={() => setIsGuidesMode(true)}
-            className="bg-stone-900 hover:bg-emerald-600 text-emerald-500 hover:text-white px-5 py-3 rounded-2xl border-2 border-emerald-600/30 hover:border-emerald-500 transition-all font-black uppercase tracking-widest text-[9px] flex items-center gap-3 shadow-lg group"
+            className="bg-stone-900 hover:bg-emerald-600 text-emerald-500 hover:text-white px-8 py-4 rounded-3xl border-2 border-emerald-600/30 hover:border-emerald-500 transition-all font-black uppercase tracking-widest text-[11px] flex items-center gap-3 shadow-lg group"
           >
-            <i className="fa-solid fa-book-open group-hover:scale-110 transition-transform"></i>
+            <i className="fa-solid fa-book-open group-hover:scale-110 transition-transform text-lg"></i>
             System Guides
           </button>
         </div>
         
-        <main className="mt-8 flex flex-col gap-6 items-center">
-          <div className="w-full flex flex-col gap-6">
+        <main className="mt-10 flex flex-col lg:flex-row gap-8 items-start">
+          <div className="w-full lg:flex-[2] flex flex-col gap-8">
             <LiveCamera ipAddress={activeIp} />
             <Statistics data={history} fireCount={fireIncidentCount} />
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <ArduinoConnect 
                 state={connectionMode === 'wireless' ? connection : ConnectionState.DISCONNECTED} 
                 onConnect={connectWirelessSensors} 
@@ -317,46 +317,46 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="w-full flex flex-col gap-6">
-            <div className={`rounded-[35px] p-8 border-b-[10px] transition-all flex items-center justify-between shadow-2xl relative overflow-hidden ${
+          <div className="w-full lg:flex-1 flex flex-col gap-8">
+            <div className={`rounded-[40px] p-10 border-b-[12px] transition-all flex items-center justify-between shadow-2xl relative overflow-hidden ${
               sensors.some(s => s.status === SensorStatus.FIRE_DETECTED) 
               ? 'bg-red-700 border-red-900 animate-pulse' 
               : connection === ConnectionState.CONNECTED ? 'bg-emerald-600 border-emerald-800' : 'bg-stone-800 border-stone-900'
             }`}>
                <div className="text-white relative z-10">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] mb-2 opacity-70">Detection Grid</h3>
-                  <p className="text-2xl md:text-5xl font-black uppercase tracking-tighter leading-none">
+                  <h3 className="text-[12px] font-black uppercase tracking-[0.3em] mb-3 opacity-70">Detection Grid</h3>
+                  <p className="text-3xl xl:text-5xl font-black uppercase tracking-tighter leading-tight">
                     {sensors.some(s => s.status === SensorStatus.FIRE_DETECTED) ? 'PANIC ACTIVE' : 
                      connection === ConnectionState.CONNECTED ? (connectionMode === 'wireless' ? 'ARMED (WIFI)' : 'ARMED (USB)') : 'STANDBY'}
                   </p>
                </div>
-               <i className={`fa-solid ${sensors.some(s => s.status === SensorStatus.FIRE_DETECTED) ? 'fa-fire-alt' : 'fa-shield-halved'} text-4xl text-white opacity-80 z-10`}></i>
+               <i className={`fa-solid ${sensors.some(s => s.status === SensorStatus.FIRE_DETECTED) ? 'fa-fire-alt' : 'fa-shield-halved'} text-5xl text-white opacity-80 z-10`}></i>
                <div className="absolute -right-4 -top-4 w-32 h-32 bg-white/10 blur-3xl rounded-full"></div>
             </div>
 
             <SensorStatusPanel sensors={sensors} />
             
-            <div className="bg-stone-900 rounded-[35px] p-8 border-b-[10px] border-stone-950 flex flex-col gap-6 shadow-2xl">
-              <h4 className="text-[11px] font-black text-stone-500 uppercase tracking-widest border-l-4 border-orange-600 pl-4">Directive Control Console</h4>
+            <div className="bg-stone-900 rounded-[40px] p-10 border-b-[12px] border-stone-950 flex flex-col gap-8 shadow-2xl">
+              <h4 className="text-[12px] font-black text-stone-500 uppercase tracking-widest border-l-4 border-orange-600 pl-4">Directive Control Console</h4>
               
               <button 
-                className="w-full bg-red-600 hover:bg-red-500 active:scale-95 text-white font-black py-5 rounded-2xl border-b-8 border-red-800 transition-all uppercase flex items-center justify-center gap-4 text-sm shadow-xl"
+                className="w-full bg-red-600 hover:bg-red-500 active:scale-95 text-white font-black py-6 rounded-3xl border-b-8 border-red-800 transition-all uppercase flex items-center justify-center gap-4 text-base shadow-xl"
                 onClick={triggerTestAlarm}
               >
-                <i className="fa-solid fa-radiation animate-spin-slow text-2xl"></i>
+                <i className="fa-solid fa-radiation animate-spin-slow text-3xl"></i>
                 Simulate Panic
               </button>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <button 
                   onClick={() => setFireIncidentCount(0)}
-                  className="bg-stone-800 hover:bg-stone-700 text-stone-400 font-black py-4 rounded-xl border-b-4 border-stone-950 transition-all uppercase text-[10px] tracking-widest"
+                  className="bg-stone-800 hover:bg-stone-700 text-stone-400 font-black py-5 rounded-2xl border-b-4 border-stone-950 transition-all uppercase text-[11px] tracking-widest"
                 >
                   Clear Logs
                 </button>
                 <button 
                   onClick={() => setSensors(INITIAL_SENSORS)}
-                  className="bg-stone-800 hover:bg-stone-700 text-stone-400 font-black py-4 rounded-xl border-b-4 border-stone-950 transition-all uppercase text-[10px] tracking-widest"
+                  className="bg-stone-800 hover:bg-stone-700 text-stone-400 font-black py-5 rounded-2xl border-b-4 border-stone-950 transition-all uppercase text-[11px] tracking-widest"
                 >
                   Hard Reset
                 </button>

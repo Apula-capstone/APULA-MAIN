@@ -6,6 +6,7 @@ function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    show: false, // Don't show the window until it's ready
     icon: path.join(__dirname, '../public/logo.svg'), // Fallback to logo.svg
     webPreferences: {
       nodeIntegration: false,
@@ -14,6 +15,10 @@ function createWindow() {
     },
     backgroundColor: '#0c0a09', // Match the stone-950 background
   });
+
+  // Start maximized for the "fullscreen" experience on laptop/desktop
+  mainWindow.maximize();
+  mainWindow.show();
 
   // Hide menu bar
   mainWindow.setMenuBarVisibility(false);

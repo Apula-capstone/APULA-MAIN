@@ -483,7 +483,7 @@ const GuidesPage: React.FC<Props> = ({ onBack }) => {
         </div>
 
         <footer className="mt-16 pb-12 text-center text-stone-600 font-bold uppercase tracking-[0.4em] text-[10px]">
-          APULA // System Documentation // v2.6.0
+          APULA // System Documentation // v2.8.0
         </footer>
       </div>
     </div>

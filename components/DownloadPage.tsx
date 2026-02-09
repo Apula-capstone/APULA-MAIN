@@ -80,7 +80,7 @@ const DownloadPage: React.FC<Props> = ({ onBack }) => {
                   Download Source Assets (ZIP)
                 </a>
               </div>
-              <p className="mt-4 text-[9px] font-black uppercase tracking-widest opacity-60 italic">v2.7.0 // Android 8.0+</p>
+              <p className="mt-4 text-[9px] font-black uppercase tracking-widest opacity-60 italic">v2.8.0 // Android 8.0+</p>
             </div>
           </section>
         </div>
@@ -178,7 +178,7 @@ const DownloadPage: React.FC<Props> = ({ onBack }) => {
         </div>
 
         <footer className="mt-16 pb-12 text-center text-stone-600 font-bold uppercase tracking-[0.4em] text-[10px]">
-          APULA // Offline Distribution // v2.7.0
+          APULA // Offline Distribution // v2.8.0
         </footer>
       </div>
     </div>

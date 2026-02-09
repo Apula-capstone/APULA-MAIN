@@ -10,13 +10,14 @@ import LiveCamera from './components/LiveCamera';
 import DownloadPage from './components/DownloadPage';
 import GuidesPage from './components/GuidesPage';
 import SerialConnect from './components/SerialConnect';
+import GSMSettings from './components/GSMSettings';
 import { SensorData, SensorStatus, HistoryPoint, ConnectionState } from './types';
 import { notificationService } from './utils/notifications';
 
 const INITIAL_SENSORS: SensorData[] = [
-  { id: '1', name: 'Alpha Zone', value: 0, status: SensorStatus.NOT_READY, lastUpdated: 'Disconnected' },
-  { id: '2', name: 'Beta Zone', value: 0, status: SensorStatus.NOT_READY, lastUpdated: 'Disconnected' },
-  { id: '3', name: 'Gamma Zone', value: 0, status: SensorStatus.NOT_READY, lastUpdated: 'Disconnected' },
+  { id: '1', name: 'Sensor 1', value: 0, status: SensorStatus.NOT_READY, lastUpdated: 'Disconnected' },
+  { id: '2', name: 'Sensor 2', value: 0, status: SensorStatus.NOT_READY, lastUpdated: 'Disconnected' },
+  { id: '3', name: 'Sensor 3', value: 0, status: SensorStatus.NOT_READY, lastUpdated: 'Disconnected' },
 ];
 
 const App: React.FC = () => {
@@ -32,6 +33,7 @@ const App: React.FC = () => {
   const [isAlarmActive, setIsAlarmActive] = useState(false);
   const [isTestActive, setIsTestActive] = useState(false);
   const [connectionMode, setConnectionMode] = useState<'wireless' | 'wired'>('wireless');
+  const [phoneNumber, setPhoneNumber] = useState("+1234567890");
   
   const sensorSocketRef = useRef<WebSocket | null>(null);
   const serialPortRef = useRef<any>(null);
@@ -232,6 +234,20 @@ const App: React.FC = () => {
     }
   };
 
+  const syncPhoneNumber = (newPhone: string) => {
+    setPhoneNumber(newPhone);
+    const cmd = `PHONE:${newPhone}\n`;
+    
+    if (connection === ConnectionState.CONNECTED && connectionMode === 'wired' && serialPortRef.current) {
+      const writer = serialPortRef.current.writable.getWriter();
+      const encoder = new TextEncoder();
+      writer.write(encoder.encode(cmd));
+      writer.releaseLock();
+    } else if (connection === ConnectionState.CONNECTED && connectionMode === 'wireless' && sensorSocketRef.current) {
+      sensorSocketRef.current.send(cmd);
+    }
+  };
+
   useEffect(() => {
     const point: HistoryPoint = {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
@@ -335,6 +351,12 @@ const App: React.FC = () => {
             </div>
 
             <SensorStatusPanel sensors={sensors} />
+            
+            <GSMSettings 
+              currentPhone={phoneNumber} 
+              onSync={syncPhoneNumber} 
+              isConnected={connection === ConnectionState.CONNECTED} 
+            />
             
             <div className="bg-stone-900 rounded-[35px] md:rounded-[45px] p-8 md:p-12 border-b-[10px] md:border-b-[15px] border-stone-950 flex flex-col gap-6 md:gap-8 shadow-2xl">
               <h4 className="text-[11px] md:text-xs font-black text-stone-500 uppercase tracking-widest border-l-4 border-orange-600 pl-4">Directive Control Console</h4>

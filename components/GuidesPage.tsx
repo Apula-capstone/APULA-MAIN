@@ -460,23 +460,61 @@ const GuidesPage: React.FC<Props> = ({ onBack }) => {
             </div>
           </section>
 
-          {/* Smart Notification System */}
+          {/* GSM & SMS Alert System */}
           <section className="bg-stone-900 rounded-[30px] p-8 border border-white/5">
             <h2 className="text-2xl font-black uppercase tracking-tight mb-4 text-white flex items-center gap-3">
-              <i className="fa-solid fa-bell text-orange-500"></i>
-              Smart Alert System
+              <i className="fa-solid fa-tower-cell text-orange-500"></i>
+              GSM & SMS Alert System
             </h2>
             <p className="text-stone-400 text-sm font-bold mb-6">
-              The system automatically sends real-time push notifications to your mobile, tablet, and desktop when a fire incident is confirmed:
+              The APULA system uses a SIM800L module to provide emergency communication even without internet access.
             </p>
-            <div className="bg-orange-500/5 border border-orange-500/20 p-6 rounded-2xl flex flex-col md:row gap-6">
-              <div className="flex-1">
-                <p className="text-orange-500 font-black uppercase text-[10px] tracking-widest mb-2">System Response</p>
-                <ul className="text-xs font-bold text-stone-300 space-y-2">
-                  <li>Trigger: <span className="text-white">Intensity &gt; 50%</span></li>
-                  <li>Dispatch: <span className="text-white">Instant Browser Notification</span></li>
-                  <li>Dashboard: <span className="text-white">Full-screen fire alarm overlay</span></li>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-black/40 p-6 rounded-2xl border border-white/5">
+                <p className="text-orange-500 font-black text-[10px] tracking-widest uppercase mb-4">SIM800L Wiring</p>
+                <ul className="space-y-3">
+                  <li className="flex justify-between items-center text-[11px] font-bold">
+                    <span className="text-stone-400">Arduino 5V</span>
+                    <i className="fa-solid fa-arrow-right text-stone-700"></i>
+                    <span className="text-white">SIM800L VCC (5V)</span>
+                  </li>
+                  <li className="flex justify-between items-center text-[11px] font-bold">
+                    <span className="text-stone-400">Arduino GND</span>
+                    <i className="fa-solid fa-arrow-right text-stone-700"></i>
+                    <span className="text-white">SIM800L GND</span>
+                  </li>
+                  <li className="flex justify-between items-center text-[11px] font-bold">
+                    <span className="text-stone-400">Arduino Pin 2 (TX)</span>
+                    <i className="fa-solid fa-arrow-right text-stone-700"></i>
+                    <span className="text-white">SIM800L RX</span>
+                  </li>
+                  <li className="flex justify-between items-center text-[11px] font-bold">
+                    <span className="text-stone-400">Arduino Pin 3 (RX)</span>
+                    <i className="fa-solid fa-arrow-right text-stone-700"></i>
+                    <span className="text-white">SIM800L TX</span>
+                  </li>
                 </ul>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-orange-500/5 border border-orange-500/20 p-6 rounded-2xl">
+                  <p className="text-orange-500 font-black uppercase text-[10px] tracking-widest mb-2">System Response</p>
+                  <ul className="text-xs font-bold text-stone-300 space-y-2">
+                    <li>• Trigger: <span className="text-white">Flame Detection &gt; 50%</span></li>
+                    <li>• SMS: <span className="text-white">"ALERT: FIRE DETECTED!"</span></li>
+                    <li>• Voice: <span className="text-white">Automated Emergency Call</span></li>
+                  </ul>
+                </div>
+                <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-xl">
+                  <p className="text-blue-500 font-black text-[10px] tracking-widest uppercase mb-1 flex items-center gap-2">
+                    <i className="fa-solid fa-info-circle"></i>
+                    Dashboard Sync
+                  </p>
+                  <p className="text-[10px] text-stone-400 font-bold leading-relaxed">
+                    Update the target phone number directly from the <span className="text-white">GSM Settings</span> panel on the dashboard.
+                  </p>
+                </div>
               </div>
             </div>
           </section>

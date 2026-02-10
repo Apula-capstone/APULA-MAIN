@@ -29,7 +29,7 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [fireIncidentCount, setFireIncidentCount] = useState(0);
   const [connection, setConnection] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
-  const [activeIp, setActiveIp] = useState("10.209.255.30");
+  const [activeIp, setActiveIp] = useState("10.255.240.30");
   const [isAlarmActive, setIsAlarmActive] = useState(false);
   const [isTestActive, setIsTestActive] = useState(false);
   const [connectionMode, setConnectionMode] = useState<'wireless' | 'wired'>('wireless');
@@ -107,7 +107,7 @@ const App: React.FC = () => {
     try {
       // Check if input is a valid IP address. If not, default to the user's fixed IP.
     const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ipOrSsid);
-    let targetIp = isIp ? ipOrSsid : "10.209.255.30"; 
+    let targetIp = isIp ? ipOrSsid : "10.255.240.30"; 
     
     console.log(`Attempting connection to ${targetIp}...`);
       setActiveIp(targetIp);

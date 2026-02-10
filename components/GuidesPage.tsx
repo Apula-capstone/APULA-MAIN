@@ -22,6 +22,148 @@ const GuidesPage: React.FC<Props> = ({ onBack }) => {
         </header>
 
         <div className="grid grid-cols-1 gap-8">
+          {/* Direct Jumper Wiring (No Breadboard) */}
+          <section className="bg-stone-900 rounded-[30px] p-8 border border-white/5 shadow-2xl overflow-hidden">
+            <h2 className="text-2xl font-black uppercase tracking-tight mb-6 text-white flex items-center gap-3">
+              <i className="fa-solid fa-bolt text-yellow-500"></i>
+              Direct Jumper Wiring (No Breadboard)
+            </h2>
+            
+            <p className="text-[11px] font-bold text-stone-400 mb-6 leading-relaxed">
+              If you don't have a breadboard, use <span className="text-white">Female-to-Male Jumper Wires</span> to connect the boards directly.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-black/40 p-6 rounded-2xl border border-white/5">
+                <h3 className="text-xs font-black text-yellow-500 uppercase tracking-widest mb-4">Step 1: Power & Ground</h3>
+                <ul className="text-xs font-bold text-stone-300 space-y-3">
+                  <li className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                    <span>Arduino <span className="text-red-500">5V</span></span>
+                    <span className="text-stone-500">→</span>
+                    <span>ESP32 <span className="text-red-500">5V / VCC</span></span>
+                  </li>
+                  <li className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                    <span>Arduino <span className="text-blue-500">GND</span></span>
+                    <span className="text-stone-500">→</span>
+                    <span>ESP32 <span className="text-blue-500">GND</span></span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-black/40 p-6 rounded-2xl border border-white/5">
+                <h3 className="text-xs font-black text-yellow-500 uppercase tracking-widest mb-4">Step 2: Communication</h3>
+                <ul className="text-xs font-bold text-stone-300 space-y-3">
+                  <li className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                    <span>Arduino <span className="text-emerald-500">Pin 0 (RX)</span></span>
+                    <span className="text-stone-500">→</span>
+                    <span>ESP32 <span className="text-emerald-500">U0T (TX)</span></span>
+                  </li>
+                  <li className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                    <span>Arduino <span className="text-emerald-500">Pin 1 (TX)</span></span>
+                    <span className="text-stone-500">→</span>
+                    <span>ESP32 <span className="text-emerald-500">U0R (RX)</span></span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-8 p-6 bg-red-600/10 border-2 border-red-500/20 rounded-[25px]">
+            <h3 className="text-white font-black uppercase text-sm mb-3 flex items-center gap-2">
+              <i className="fa-solid fa-triangle-exclamation text-red-500"></i>
+              For Uploading via Jumper Wires
+            </h3>
+            <p className="text-stone-400 text-xs font-bold leading-relaxed mb-4">
+              If you are using the Arduino as a programmer (No Breadboard), you still need these 2 connections:
+            </p>
+            <ul className="text-[10px] font-black text-white uppercase space-y-2">
+              <li>• <span className="text-red-500">ARDUINO:</span> Connect <span className="bg-white/10 px-2 py-0.5 rounded">RESET</span> to <span className="bg-white/10 px-2 py-0.5 rounded">GND</span> using a small wire loop.</li>
+              <li>• <span className="text-red-500">ESP32:</span> Connect <span className="bg-white/10 px-2 py-0.5 rounded">GPIO 0</span> to <span className="bg-white/10 px-2 py-0.5 rounded">GND</span> (Use a female-to-female jumper).</li>
+            </ul>
+          </div>
+
+          <div className="mt-4 p-6 bg-blue-600/10 border-2 border-blue-500/20 rounded-[25px]">
+            <h3 className="text-white font-black uppercase text-sm mb-3 flex items-center gap-2">
+              <i className="fa-solid fa-signal text-blue-500"></i>
+              Camera Lag & Multi-Device Fix
+            </h3>
+            <p className="text-stone-400 text-xs font-bold leading-relaxed">
+              The ESP32-CAM is power-hungry. If the stream is laggy or stops when 2 devices connect:
+            </p>
+            <ul className="text-[10px] font-bold text-white uppercase mt-3 space-y-1">
+              <li>• Use a <span className="text-blue-500">dedicated 5V 2A power adapter</span> for the ESP32 if possible.</li>
+              <li>• Ensure your WiFi router is close to the camera.</li>
+              <li>• Avoid using "SVGA" or "UXGA" resolutions in the code.</li>
+            </ul>
+          </div>
+          </section>
+
+          {/* Physical Wiring Map */}
+          <section className="bg-stone-900 rounded-[30px] p-8 border border-white/5 shadow-2xl overflow-hidden">
+            <h2 className="text-2xl font-black uppercase tracking-tight mb-6 text-white flex items-center gap-3">
+              <i className="fa-solid fa-diagram-project text-blue-500"></i>
+              Full System Connection Map
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="bg-blue-600/10 border border-blue-500/30 p-5 rounded-2xl">
+                  <h3 className="text-xs font-black text-blue-400 uppercase tracking-widest mb-3">ESP32 <i className="fa-solid fa-arrows-left-right"></i> Arduino (Bridge)</h3>
+                  <ul className="text-[11px] font-bold text-stone-300 space-y-2">
+                    <li className="flex justify-between border-b border-white/5 pb-2">
+                      <span>ESP32 <span className="text-blue-500">U0T (TX)</span></span>
+                      <span className="text-white">→</span>
+                      <span>Arduino <span className="text-blue-500">Pin 0 (RX)</span></span>
+                    </li>
+                    <li className="flex justify-between border-b border-white/5 pb-2">
+                      <span>ESP32 <span className="text-blue-500">U0R (RX)</span></span>
+                      <span className="text-white">→</span>
+                      <span>Arduino <span className="text-blue-500">Pin 1 (TX)</span></span>
+                    </li>
+                    <li className="text-orange-500 italic mt-2">Note: Cross-connect TX to RX for data flow.</li>
+                  </ul>
+                </div>
+
+                <div className="bg-emerald-600/10 border border-emerald-500/30 p-5 rounded-2xl">
+                  <h3 className="text-xs font-black text-emerald-400 uppercase tracking-widest mb-3">SIM800L <i className="fa-solid fa-arrows-left-right"></i> Arduino (SMS)</h3>
+                  <ul className="text-[11px] font-bold text-stone-300 space-y-2">
+                    <li className="flex justify-between border-b border-white/5 pb-2">
+                      <span>SIM <span className="text-emerald-500">TX</span></span>
+                      <span className="text-white">→</span>
+                      <span>Arduino <span className="text-emerald-500">Pin 3 (RX)</span></span>
+                    </li>
+                    <li className="flex justify-between border-b border-white/5 pb-2">
+                      <span>SIM <span className="text-emerald-500">RX</span></span>
+                      <span className="text-white">→</span>
+                      <span>Arduino <span className="text-emerald-500">Pin 2 (TX)</span></span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="bg-red-600/10 border-2 border-red-500/40 p-6 rounded-[30px] flex flex-col justify-center">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center text-2xl animate-pulse">
+                    <i className="fa-solid fa-triangle-exclamation text-white"></i>
+                  </div>
+                  <h3 className="text-lg font-black text-white uppercase leading-none">Critical Upload Rule</h3>
+                </div>
+                <p className="text-[11px] font-bold text-stone-300 leading-relaxed">
+                  Because the <span className="text-white underline">ESP32</span> and <span className="text-white underline">SIM800L</span> are physically connected to the Arduino's communication pins:
+                </p>
+                <div className="mt-4 space-y-3">
+                  <div className="bg-black/40 p-3 rounded-xl border border-red-500/20">
+                    <p className="text-[10px] text-red-400 font-black uppercase mb-1">Step 1:</p>
+                    <p className="text-[10px] text-white">Unplug wires from <span className="font-black">Pins 0 and 1</span> before clicking Upload in Arduino IDE.</p>
+                  </div>
+                  <div className="bg-black/40 p-3 rounded-xl border border-red-500/20">
+                    <p className="text-[10px] text-red-400 font-black uppercase mb-1">Step 2:</p>
+                    <p className="text-[10px] text-white">Wait for "Done Uploading", then plug them back in.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* WiFi & Camera Guide */}
           <section className="bg-stone-900 rounded-[30px] p-8 border border-white/5 shadow-2xl">
             <h2 className="text-2xl font-black uppercase tracking-tight mb-6 text-white flex items-center gap-3">
@@ -35,7 +177,21 @@ const GuidesPage: React.FC<Props> = ({ onBack }) => {
                   The Arduino Uno connects wirelessly to the dashboard by using the <span className="text-white">ESP32-CAM as a Bridge</span>. The Arduino sends sensor data to the ESP32, which then broadcasts it over WiFi.
                 </p>
                 <div>
-                  <h3 className="text-sm font-black text-orange-500 uppercase tracking-widest mb-3">Option 1: Hotspot Mode (Default)</h3>
+                <h3 className="text-sm font-black text-orange-500 uppercase tracking-widest mb-3">Multi-Breadboard Setup</h3>
+                <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
+                  <p className="text-[11px] text-stone-400 mb-3 leading-relaxed">
+                    If using a <span className="text-white">Half Breadboard</span> (Sensors/Servos) and a <span className="text-white">Whole Breadboard</span> (ESP32/SIM800L), you MUST bridge them:
+                  </p>
+                  <ul className="text-xs font-bold text-stone-300 space-y-3">
+                    <li>1. <span className="text-blue-500">Bridge GND:</span> Run a jumper from the Blue Rail of the Half board to the Blue Rail of the Whole board.</li>
+                    <li>2. <span className="text-red-500">Bridge 5V:</span> Run a jumper from the Red Rail of the Half board to the Red Rail of the Whole board.</li>
+                    <li className="text-orange-400 italic font-black">Without this bridge, the Arduino cannot read the sensors or talk to the SIM800L!</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-black text-orange-500 uppercase tracking-widest mb-3">Option 1: Hotspot Mode (Default)</h3>
                   <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
                     <ul className="text-xs font-bold text-stone-300 space-y-3">
                       <li>• Connect phone to WiFi: <span className="text-white">APULA_RECOVERY</span></li>
@@ -204,6 +360,19 @@ const GuidesPage: React.FC<Props> = ({ onBack }) => {
                 <p className="text-orange-500 font-black mb-2 uppercase text-xs tracking-widest">Dashboard Sync</p>
                 <p className="text-stone-400 text-xs font-bold leading-relaxed">
                   Analog values are normalized to <span className="text-white">0-100%</span> for the real-time graph.
+                </p>
+              </div>
+            </div>
+
+            {/* Sensor Placement Tip */}
+            <div className="mt-8 p-6 bg-orange-600/10 border-2 border-orange-600/20 rounded-[25px] flex flex-col md:flex-row gap-6 items-center">
+              <div className="w-16 h-16 bg-orange-600 rounded-2xl flex items-center justify-center text-white text-2xl shrink-0 shadow-lg">
+                <i className="fa-solid fa-compass"></i>
+              </div>
+              <div>
+                <h3 className="text-white font-black uppercase text-sm mb-1">Placement Optimization</h3>
+                <p className="text-stone-400 text-xs font-bold leading-relaxed">
+                  For maximum coverage, do not place sensors facing the same way. Angle <span className="text-white">Sensor 1 (Left)</span>, <span className="text-white">Sensor 2 (Center)</span>, and <span className="text-white">Sensor 3 (Right)</span>. This creates a 180° "Safety Curtain" that prevents blind spots in your fire detection grid.
                 </p>
               </div>
             </div>

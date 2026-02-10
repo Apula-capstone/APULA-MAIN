@@ -80,9 +80,10 @@
             break;
         }
 
-        // Optimized yielding for multi-device support
-        // vTaskDelay(1) allows the WiFi stack and other clients to process
-        vTaskDelay(1 / portTICK_PERIOD_MS);
+        // --- MULTI-DEVICE OPTIMIZATION ---
+        // 1. Add a small delay (40ms) to target ~25 FPS max per client.
+        // This prevents one client from hogging the CPU and bandwidth.
+        vTaskDelay(40 / portTICK_PERIOD_MS); 
     }
     return res;
 }

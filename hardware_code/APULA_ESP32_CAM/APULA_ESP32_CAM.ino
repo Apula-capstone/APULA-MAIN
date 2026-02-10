@@ -57,12 +57,12 @@ void setup() {
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
-  config.frame_size = FRAMESIZE_QVGA; 
+  config.frame_size = FRAMESIZE_CIF;  // 400x296 - Better balance than QVGA
   config.pixel_format = PIXFORMAT_JPEG;
   config.grab_mode = CAMERA_GRAB_LATEST; 
   config.fb_location = CAMERA_FB_IN_PSRAM;
-  config.jpeg_quality = 20;
-  config.fb_count = 3;
+  config.jpeg_quality = 30; // Increased compression (30) to reduce lag and help multi-device
+  config.fb_count = 4;      // Increased buffer count for multiple clients
 
   // Camera Init
   esp_err_t err = esp_camera_init(&config);

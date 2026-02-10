@@ -27,5 +27,5 @@ temp_build/
 dist_electron/
 *.msi
 public/APULA_Fire_System_Portable.zip
-!public/*.apk
-!public/APULA.zip
+*.apk
+public/APULA.zip

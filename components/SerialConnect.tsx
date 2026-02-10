@@ -10,11 +10,14 @@ interface Props {
 
 const SerialConnect: React.FC<Props> = ({ state, onData, onConnect, onDisconnect }) => {
   const [error, setError] = useState<string | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
   const portRef = useRef<any>(null);
   const readerRef = useRef<any>(null);
+  const keepReading = useRef(true);
 
   const connectSerial = async () => {
     setError(null);
+    keepReading.current = true;
     try {
       if (!('serial' in navigator)) {
         throw new Error('Web Serial not supported in this browser.');
@@ -33,36 +36,72 @@ const SerialConnect: React.FC<Props> = ({ state, onData, onConnect, onDisconnect
   };
 
   const readLoop = async () => {
-    while (portRef.current?.readable) {
-      const textDecoder = new TextDecoderStream();
-      const readableStreamClosed = portRef.current.readable.pipeTo(textDecoder.writable);
-      const reader = textDecoder.readable.getReader();
-      readerRef.current = reader;
-
+    while (portRef.current?.readable && keepReading.current) {
       try {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          if (value) onData(value);
+        const reader = portRef.current.readable.getReader();
+        readerRef.current = reader;
+        const decoder = new TextDecoder();
+
+        try {
+          while (keepReading.current) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            if (value) {
+              onData(decoder.decode(value));
+            }
+          }
+        } catch (err) {
+          console.error('Serial Read Error:', err);
+        } finally {
+          reader.releaseLock();
+          readerRef.current = null;
         }
       } catch (err) {
-        console.error('Serial Read Error:', err);
+        console.error('Serial Stream Error:', err);
         break;
-      } finally {
-        reader.releaseLock();
       }
     }
   };
 
   const disconnectSerial = async () => {
-    if (readerRef.current) {
-      await readerRef.current.cancel();
+    if (isClosing) return;
+    setIsClosing(true);
+    keepReading.current = false;
+    
+    try {
+      // 1. Cancel the reader first
+      if (readerRef.current) {
+        try {
+          await readerRef.current.cancel();
+        } catch (e) {
+          console.error('Error cancelling reader:', e);
+        }
+        readerRef.current = null;
+      }
+      
+      // 2. Wait for the loop to settle
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // 3. Close the port
+      if (portRef.current) {
+        try {
+          await portRef.current.close();
+        } catch (e) {
+          console.error('Error closing port:', e);
+        }
+        portRef.current = null;
+      }
+      
+      onDisconnect();
+    } catch (err: any) {
+      console.error('Disconnect Error:', err);
+      setError('Failed to close port: ' + err.message);
+      portRef.current = null;
+      readerRef.current = null;
+      onDisconnect();
+    } finally {
+      setIsClosing(false);
     }
-    if (portRef.current) {
-      await portRef.current.close();
-    }
-    portRef.current = null;
-    onDisconnect();
   };
 
   return (
@@ -99,9 +138,10 @@ const SerialConnect: React.FC<Props> = ({ state, onData, onConnect, onDisconnect
           {state === ConnectionState.CONNECTED ? (
             <button 
               onClick={disconnectSerial}
-              className="w-full bg-red-600/20 hover:bg-red-600 text-red-500 hover:text-white py-3 md:py-4 rounded-xl font-black uppercase text-[10px] md:text-xs tracking-widest transition-all border border-red-600/30"
+              disabled={isClosing}
+              className={`w-full ${isClosing ? 'bg-stone-700 text-stone-500 cursor-not-allowed' : 'bg-red-600/20 hover:bg-red-600 text-red-500 hover:text-white'} py-3 md:py-4 rounded-xl font-black uppercase text-[10px] md:text-xs tracking-widest transition-all border border-red-600/30`}
             >
-              Close Serial Link
+              {isClosing ? 'Closing Link...' : 'Close Serial Link'}
             </button>
           ) : (
             <button 

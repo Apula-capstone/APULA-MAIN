@@ -7,50 +7,30 @@ interface Props {
 }
 
 const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const oscillatorsRef = useRef<OscillatorNode[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (isActive) {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (!audioRef.current) {
+        audioRef.current = new Audio('/sound.mp3');
+        audioRef.current.loop = true;
       }
       
-      const ctx = audioCtxRef.current;
-      const masterGain = ctx.createGain();
-      masterGain.gain.setValueAtTime(0.2, ctx.currentTime);
-      masterGain.connect(ctx.destination);
-
-      const createSiren = (freq: number, modFreq: number, modGainVal: number) => {
-        const osc = ctx.createOscillator();
-        const lfo = ctx.createOscillator();
-        const lfoGain = ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime);
-        lfo.type = 'square';
-        lfo.frequency.setValueAtTime(modFreq, ctx.currentTime);
-        lfoGain.gain.setValueAtTime(modGainVal, ctx.currentTime);
-        lfo.connect(lfoGain);
-        lfoGain.connect(osc.frequency);
-        osc.connect(masterGain);
-        lfo.start();
-        osc.start();
-        return osc;
-      };
-
-      oscillatorsRef.current = [
-        createSiren(440, 4, 200),
-        createSiren(466.16, 5, 250),
-        createSiren(311.13, 6, 150)
-      ];
-    } else {
-      oscillatorsRef.current.forEach(osc => {
-        try { osc.stop(); osc.disconnect(); } catch (e) {}
+      audioRef.current.play().catch(error => {
+        console.error("Audio playback failed:", error);
       });
-      oscillatorsRef.current = [];
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
     }
+
     return () => {
-      oscillatorsRef.current.forEach(osc => { try { osc.stop(); } catch (e) {} });
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
   }, [isActive]);
 

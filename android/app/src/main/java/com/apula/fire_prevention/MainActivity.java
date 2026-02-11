@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -22,7 +23,7 @@ public class MainActivity extends BridgeActivity {
 
     private static final String CHANNEL_ID = "fire_alert_channel";
     private static final int PERMISSIONS_REQUEST_CODE = 123;
-    private String emergencyNumber = "911"; // Placeholder
+    private String emergencyNumber = "000";
     private String userNumber;
     private boolean isEmergencyCall = false;
 
@@ -35,15 +36,21 @@ public class MainActivity extends BridgeActivity {
         webSettings.setDomStorageEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setAllowContentAccess(true);
+        webSettings.setAllowFileAccessFromFileURLs(true);
+        webSettings.setAllowUniversalAccessFromFileURLs(true);
 
+        // Add JavascriptInterface
         WebAppInterface webAppInterface = new WebAppInterface(this);
         webView.addJavascriptInterface(webAppInterface, "Android");
 
         createNotificationChannel();
         requestPermissions();
+        getUserPhoneNumber();
 
         TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         telephonyManager.listen(new CallStateListener(webAppInterface), PhoneStateListener.LISTEN_CALL_STATE);
+
+        webView.loadUrl("file:///android_asset/public/index.html");
     }
 
     private void requestPermissions() {
@@ -84,6 +91,12 @@ public class MainActivity extends BridgeActivity {
             int importance = NotificationManager.IMPORTANCE_HIGH;
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
+            Uri soundUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.sound);
+            AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .build();
+            channel.setSound(soundUri, audioAttributes);
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
@@ -152,6 +165,12 @@ public class MainActivity extends BridgeActivity {
                     requestPermissions();
                 }
             }
+        }
+
+        @JavascriptInterface
+        public void simulateFireAlert() {
+            showFireNotification("Fire Detected", "A fire has been detected in your area.");
+            checkAndDial("FIRE_DETECTED");
         }
     }
 }

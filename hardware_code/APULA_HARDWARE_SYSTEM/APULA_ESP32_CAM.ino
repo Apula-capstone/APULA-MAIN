@@ -1,4 +1,14 @@
 
+// ======================================================
+// APULA FIRE PREVENTION - ESP32-CAM FIRMWARE
+// ======================================================
+// WIRING TO ARDUINO UNO:
+// ESP32-CAM TX (U0T) -> ARDUINO UNO RX (Pin 0)
+// ESP32-CAM RX (U0R) -> ARDUINO UNO TX (Pin 1)
+// ESP32-CAM GND      -> ARDUINO UNO GND
+// ESP32-CAM 5V       -> ARDUINO UNO 5V (Requires stable 5V)
+// ======================================================
+
 #include "esp_camera.h"
 #include <WiFi.h>
 #include <WebSocketsServer.h>

@@ -34,6 +34,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <service
+            android:name=".FireAlertService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_CATEGORY"
+                android:value="fire_detection_and_emergency_alerts" />
+        </service>
     </application>
 
     <!-- Permissions -->
@@ -45,5 +54,6 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
 </manifest>

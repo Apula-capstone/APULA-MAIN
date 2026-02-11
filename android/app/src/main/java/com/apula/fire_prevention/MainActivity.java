@@ -13,11 +13,16 @@ import android.os.Bundle;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
+import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebViewClient;
+import java.util.ArrayList;
 
 public class MainActivity extends BridgeActivity {
 
@@ -26,6 +31,7 @@ public class MainActivity extends BridgeActivity {
     private String emergencyNumber = "000";
     private String userNumber;
     private boolean isEmergencyCall = false;
+    private WebAppInterface webAppInterface;
 
     @Override
     public void onStart() {
@@ -39,31 +45,75 @@ public class MainActivity extends BridgeActivity {
         webSettings.setAllowFileAccessFromFileURLs(true);
         webSettings.setAllowUniversalAccessFromFileURLs(true);
 
-        // Add JavascriptInterface
-        WebAppInterface webAppInterface = new WebAppInterface(this);
+        webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                String path = request.getUrl().getPath();
+                if (path != null && (path.endsWith(".ttf") || path.endsWith(".woff2") || path.endsWith(".css") || path.endsWith(".js") || path.endsWith(".html"))) {
+                    try {
+                        String assetPath = "public" + path;
+                        if (path.equals("/")) {
+                            assetPath = "public/index.html";
+                        }
+                        return new WebResourceResponse(
+                            request.getUrl().getScheme(),
+                            "UTF-8",
+                            getAssets().open(assetPath)
+                        );
+                    } catch (Exception e) {
+                        // Asset not found, let the default loader handle it
+                    }
+                }
+                return super.shouldInterceptRequest(view, request);
+            }
+        });
+
+        webAppInterface = new WebAppInterface(this);
         webView.addJavascriptInterface(webAppInterface, "Android");
 
         createNotificationChannel();
         requestPermissions();
-        getUserPhoneNumber();
+        startBackgroundService();
+    }
 
-        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        telephonyManager.listen(new CallStateListener(webAppInterface), PhoneStateListener.LISTEN_CALL_STATE);
-
-        webView.loadUrl("file:///android_asset/public/index.html");
+    private void startBackgroundService() {
+        Intent serviceIntent = new Intent(this, FireAlertService.class);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void requestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, new String[]{
-                    Manifest.permission.READ_PHONE_STATE,
-                    Manifest.permission.READ_PHONE_NUMBERS,
-                    Manifest.permission.CALL_PHONE
-                }, PERMISSIONS_REQUEST_CODE);
+            ArrayList<String> permissionsToRequest = new ArrayList<>();
+            if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.READ_PHONE_STATE);
             }
+            if (checkSelfPermission(Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.READ_PHONE_NUMBERS);
+            }
+            if (checkSelfPermission(Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.CALL_PHONE);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS);
+                }
+            }
+
+            if (!permissionsToRequest.isEmpty()) {
+                ActivityCompat.requestPermissions(this, permissionsToRequest.toArray(new String[0]), PERMISSIONS_REQUEST_CODE);
+            } else {
+                initializeTelephony();
+            }
+        } else {
+            initializeTelephony();
         }
     }
 
@@ -71,10 +121,23 @@ public class MainActivity extends BridgeActivity {
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSIONS_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                getUserPhoneNumber();
+            boolean allPermissionsGranted = true;
+            for (int grantResult : grantResults) {
+                if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+            if (allPermissionsGranted) {
+                initializeTelephony();
             }
         }
+    }
+
+    private void initializeTelephony() {
+        getUserPhoneNumber();
+        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        telephonyManager.listen(new CallStateListener(webAppInterface), PhoneStateListener.LISTEN_CALL_STATE);
     }
 
     private void getUserPhoneNumber() {

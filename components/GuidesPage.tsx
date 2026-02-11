@@ -229,6 +229,36 @@ const GuidesPage: React.FC<Props> = ({ onBack }) => {
                     </ul>
                   </div>
                 </div>
+
+                <div className="mt-8 border-t border-white/10 pt-8">
+                  <h3 className="text-lg font-black text-emerald-500 uppercase tracking-tighter mb-4 flex items-center gap-2">
+                    <i className="fa-solid fa-gear"></i>
+                    How to change the Camera IP
+                  </h3>
+                  <div className="bg-emerald-600/5 border-2 border-emerald-500/20 p-6 rounded-[25px]">
+                    <div className="space-y-6">
+                      <div>
+                        <p className="text-xs font-black text-white uppercase mb-2">1. In the Dashboard (React Code):</p>
+                        <p className="text-[11px] text-stone-400 mb-2">Open <code className="bg-stone-800 px-2 py-0.5 rounded text-orange-400">src/App.tsx</code> or the "Wired Hub" settings and look for:</p>
+                        <div className="bg-black/60 p-3 rounded-xl border border-white/5 font-mono text-[10px] text-emerald-400">
+                          const DEFAULT_IP = "10.255.240.30";
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-white uppercase mb-2">2. In the ESP32 Hardware Code:</p>
+                        <p className="text-[11px] text-stone-400 mb-2">Open <code className="bg-stone-800 px-2 py-0.5 rounded text-orange-400">APULA_ESP32_CAM.ino</code> and look for the Static IP configuration section:</p>
+                        <div className="bg-black/60 p-3 rounded-xl border border-white/5 font-mono text-[10px] text-orange-400">
+                          IPAddress local_IP(10, 255, 240, 30);<br/>
+                          IPAddress gateway(10, 255, 240, 1);<br/>
+                          IPAddress subnet(255, 255, 255, 0);
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-stone-500 italic font-bold">
+                        Tip: Make sure both the Hardware and the Dashboard match, or the stream will not load!
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="bg-orange-500/5 border-2 border-orange-500/20 rounded-[30px] p-6">

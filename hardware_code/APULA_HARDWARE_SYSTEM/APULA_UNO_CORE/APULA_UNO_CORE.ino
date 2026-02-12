@@ -14,8 +14,9 @@
 // ================= SIM800L =================
 SoftwareSerial sim800(12, 13); // RX, TX (using pins from provided code)
 
-// Replace with your phone number
-String phoneNumber = "+639619113527";
+// Replace with your phone numbers
+String phoneNumber1 = "+639619113527";
+String phoneNumber2 = "+639511135809";
 
 // ================= FLAME SENSORS =================
 // Using pins from provided code
@@ -170,18 +171,27 @@ void makeCall() {
   delay(500);
 
   Serial.print("GSM:CALLING:");
-  Serial.println(phoneNumber);
+  Serial.println(phoneNumber1);
   
-  // 5. Dial the number
+  // 5. Dial first number
   sim800.print("ATD");
-  sim800.print(phoneNumber);
+  sim800.print(phoneNumber1);
   sim800.println(";");
   
-  // Wait for 20 seconds while call is active
-  // During this time, the buzzer and pump will remain ON because they were set before calling
   delay(20000); 
-
   sim800.println("ATH"); // Hang up
+  delay(2000);
+
+  // 6. Dial second number
+  Serial.print("GSM:CALLING:");
+  Serial.println(phoneNumber2);
+  sim800.print("ATD");
+  sim800.print(phoneNumber2);
+  sim800.println(";");
+  
+  delay(20000); 
+  sim800.println("ATH"); // Hang up
+  
   Serial.println("GSM:STATUS:CALL_ENDED");
 }
 
@@ -209,9 +219,9 @@ void handleSerialCommands() {
     cmd.trim();
     
     if (cmd.startsWith("PHONE:")) {
-      phoneNumber = cmd.substring(6);
+      phoneNumber1 = cmd.substring(6);
       Serial.print("CONFIG:PHONE_UPDATED:");
-      Serial.println(phoneNumber);
+      Serial.println(phoneNumber1);
     } else if (cmd == "TEST_PANIC") {
       fireDetected = true;
       makeCall();

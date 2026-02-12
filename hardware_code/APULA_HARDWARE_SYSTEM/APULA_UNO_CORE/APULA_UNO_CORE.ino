@@ -33,6 +33,9 @@ const int servoPin1 = 9;
 const int servoPin2 = 10;
 const int servoPin3 = 11;
 
+// ================= WATER PUMP =================
+const int pumpPin = 6; // Pin 6 for water pump system
+
 int angle1 = 0, angle2 = 0, angle3 = 0;
 int dir1 = 1, dir2 = 1, dir3 = 1;
 
@@ -56,6 +59,7 @@ void setup() {
   pinMode(redLED, OUTPUT);
   pinMode(greenLED, OUTPUT);
   pinMode(buzzer, OUTPUT);
+  pinMode(pumpPin, OUTPUT);
 
   servo1.attach(servoPin1);
   servo2.attach(servoPin2);
@@ -124,6 +128,7 @@ void updateAlarm() {
     digitalWrite(redLED, HIGH); 
     digitalWrite(greenLED, LOW); 
     digitalWrite(buzzer, LOW); 
+    digitalWrite(pumpPin, LOW); // Ensure pump is OFF
     callMade = false; // reset call when fire is gone
   }
   else {
@@ -131,8 +136,9 @@ void updateAlarm() {
     digitalWrite(redLED, LOW);
     digitalWrite(greenLED, HIGH);
 
-    // LOUD continuous buzzer
+    // LOUD continuous buzzer and Pump ON
     digitalWrite(buzzer, HIGH);
+    digitalWrite(pumpPin, HIGH); // Activate pump system
 
     // Make call only once
     if (!callMade) {

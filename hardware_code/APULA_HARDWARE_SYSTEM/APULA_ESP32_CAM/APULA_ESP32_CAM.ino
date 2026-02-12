@@ -135,17 +135,19 @@ void loop() {
   dnsServer.processNextRequest();
   webSocket.loop();
 
-  // Forward Arduino Serial data to WebSocket
+  // Forward Arduino Serial data to all connected WebSockets (Multiple Devices)
   if (Serial.available()) {
     String data = Serial.readStringUntil('\n');
     data.trim();
     if (data.length() > 0) {
-      if (data.startsWith("SENSORS:")) {
-        webSocket.broadcastTXT(data);
+      // Broadcast to all connected clients (Website on Laptop, App on Phone, etc.)
+      webSocket.broadcastTXT(data);
+      
+      // Mirror to Serial for local monitoring
+      if (!data.startsWith("SENSORS:")) {
+        Serial.print("EVENT:");
+        Serial.println(data);
       }
-      // Log other messages for debugging
-      Serial.print("FORWARD:");
-      Serial.println(data);
     }
   }
 }

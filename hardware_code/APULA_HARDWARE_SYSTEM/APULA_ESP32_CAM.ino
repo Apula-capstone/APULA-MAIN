@@ -34,9 +34,9 @@ WebSocketsServer webSocket = WebSocketsServer(82);
 void onWebSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
   if (type == WStype_TEXT) {
     String message = String((char*)payload);
-    if (message == "TEST_PANIC") {
-      // Forward TEST_PANIC command to Arduino
-      Serial.println("TEST_PANIC");
+    if (message == "TEST_PANIC" || message.startsWith("SERVO:") || message.startsWith("PHONE:") || message.startsWith("PUMP_")) {
+      // Forward command to Arduino
+      Serial.println(message);
     }
   }
 }

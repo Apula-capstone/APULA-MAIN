@@ -11,7 +11,7 @@ interface Props {
 }
 
 const Statistics: React.FC<Props> = ({ data, fireCount }) => {
-  const latestIntensity = data.length > 0 ? Math.max(data[data.length-1].alpha, data[data.length-1].beta, data[data.length-1].gamma) : 0;
+  const latestIntensity = data.length > 0 ? Math.max(data[data.length-1].alpha, data[data.length-1].beta) : 0;
 
   return (
     <div className="bg-stone-900 rounded-[25px] md:rounded-[30px] p-4 md:p-8 border-4 md:border-8 border-orange-600 shadow-2xl">
@@ -40,10 +40,6 @@ const Statistics: React.FC<Props> = ({ data, fireCount }) => {
               <linearGradient id="colorBeta" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
                 <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id="colorGamma" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#fbbf24" stopOpacity={0}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} opacity={0.3} />
@@ -81,7 +77,7 @@ const Statistics: React.FC<Props> = ({ data, fireCount }) => {
               strokeWidth={3}
               fillOpacity={1} 
               fill="url(#colorAlpha)" 
-              name="Alpha"
+              name="Zone Alpha"
               isAnimationActive={false}
             />
             <Area 
@@ -91,17 +87,7 @@ const Statistics: React.FC<Props> = ({ data, fireCount }) => {
               strokeWidth={3}
               fillOpacity={1} 
               fill="url(#colorBeta)" 
-              name="Beta" 
-              isAnimationActive={false}
-            />
-            <Area 
-              type="monotone" 
-              dataKey="gamma" 
-              stroke="#fbbf24" 
-              strokeWidth={3}
-              fillOpacity={1} 
-              fill="url(#colorGamma)" 
-              name="Gamma"
+              name="Zone Beta" 
               isAnimationActive={false}
             />
           </AreaChart>
@@ -115,7 +101,7 @@ const Statistics: React.FC<Props> = ({ data, fireCount }) => {
           <i className="fa-solid fa-fire absolute -right-2 -bottom-2 text-white/10 text-6xl group-hover:scale-110 transition-transform"></i>
         </div>
         <div className="bg-stone-800 p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-8 border-orange-500 text-center">
-          <p className="text-[9px] md:text-[11px] font-black uppercase text-stone-500 mb-1 tracking-widest">Avg Intensity</p>
+          <p className="text-[9px] md:text-[11px] font-black uppercase text-stone-500 mb-1 tracking-widest">Max Intensity</p>
           <p className="text-xl md:text-4xl font-black text-white">{latestIntensity}%</p>
         </div>
         <div className="bg-stone-800 p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-8 border-emerald-500 text-center col-span-2 lg:col-span-1">

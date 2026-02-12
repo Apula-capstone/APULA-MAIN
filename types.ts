@@ -30,5 +30,4 @@ export interface HistoryPoint {
   time: string;
   alpha: number;
   beta: number;
-  gamma: number;
 }

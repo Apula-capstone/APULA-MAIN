@@ -15,9 +15,8 @@ import { SensorData, SensorStatus, HistoryPoint, ConnectionState } from './types
 import { notificationService } from './utils/notifications';
 
 const INITIAL_SENSORS: SensorData[] = [
-  { id: '1', name: 'Sensor 1', value: 0, status: SensorStatus.NOT_READY, lastUpdated: 'Disconnected' },
-  { id: '2', name: 'Sensor 2', value: 0, status: SensorStatus.NOT_READY, lastUpdated: 'Disconnected' },
-  { id: '3', name: 'Sensor 3', value: 0, status: SensorStatus.NOT_READY, lastUpdated: 'Disconnected' },
+  { id: '1', name: 'Apolaki', value: 0, status: SensorStatus.NOT_READY, lastUpdated: 'Disconnected' },
+  { id: '2', name: 'Kan-laon', value: 0, status: SensorStatus.NOT_READY, lastUpdated: 'Disconnected' },
 ];
 
 const App: React.FC = () => {
@@ -32,6 +31,7 @@ const App: React.FC = () => {
   const [activeIp, setActiveIp] = useState("10.255.240.30");
   const [isAlarmActive, setIsAlarmActive] = useState(false);
   const [isTestActive, setIsTestActive] = useState(false);
+  const [isPumpActive, setIsPumpActive] = useState(false);
   const [connectionMode, setConnectionMode] = useState<'wireless' | 'wired'>('wireless');
   const [phoneNumber, setPhoneNumber] = useState("+1234567890");
   
@@ -63,6 +63,15 @@ const App: React.FC = () => {
         tag: 'fire-alert',
         requireInteraction: true
       });
+
+      // Call Android Interface if available
+      if ((window as any).Android) {
+        try {
+          (window as any).Android.simulateFireAlert();
+        } catch (e) {
+          console.error("Android interface call failed", e);
+        }
+      }
     } else if (!fireDetected) {
       fireInCurrentTurn.current = false;
     }
@@ -72,31 +81,52 @@ const App: React.FC = () => {
     const raw = data.trim().toUpperCase();
     if (isTestActive) return;
 
-    // Default values
-    let sensorValues = [0, 0, 0];
+    if (raw === "SENSORS:FIRE_DETECTED") {
+        setSensors(prev => prev.map(s => ({
+            ...s,
+            status: SensorStatus.FIRE_DETECTED,
+            value: 100,
+            lastUpdated: new Date().toLocaleTimeString()
+        })));
+        return;
+    }
+
+    if (raw === "SENSORS:SAFE") {
+        setSensors(prev => prev.map(s => ({
+            ...s,
+            status: SensorStatus.READY,
+            value: 0,
+            lastUpdated: new Date().toLocaleTimeString()
+        })));
+        return;
+    }
 
     if (raw.includes("SENSORS:")) {
       const payload = raw.split("SENSORS:")[1];
       const values = payload.split(',').map(v => parseInt(v.trim(), 10));
-      if (values.length >= 3) {
-        // Dashboard expects intensity 0-100. Analog is 0-1023.
-        // For flame sensors, LOW (0) is fire. In analog, lower values usually mean fire.
-        // We'll normalize: (1023 - val) / 10.23 to get 0-100% intensity
-        sensorValues = values.map(v => Math.max(0, Math.min(100, Math.round((1023 - v) / 10.23))));
-      }
-
-      setSensors(prev => prev.map((s, i) => {
-        const intensity = sensorValues[i];
-        const isFlame = intensity > 50; // Trigger threshold
-        const newStatus = isFlame ? SensorStatus.FIRE_DETECTED : SensorStatus.SAFE;
+      
+      if (values.length >= 2) {
+        const sensorValues = values.slice(0, 2).map(v => Math.max(0, Math.min(100, Math.round((1023 - v) / 10.23))));
         
-        return {
-          ...s,
-          value: intensity,
-          status: newStatus,
-          lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-        };
-      }));
+        // Check for pump status if 3rd value exists
+        if (values.length >= 3) {
+          setIsPumpActive(values[2] === 1);
+        }
+
+        setSensors(prev => prev.map((s, i) => {
+            if (i >= 2) return s;
+            const intensity = sensorValues[i];
+            const isFlame = intensity > 50;
+            const newStatus = isFlame ? SensorStatus.FIRE_DETECTED : SensorStatus.SAFE;
+            
+            return {
+              ...s,
+              value: intensity,
+              status: newStatus,
+              lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            };
+        }));
+      }
     }
   }, [isTestActive]);
 
@@ -105,18 +135,14 @@ const App: React.FC = () => {
     
     setConnection(ConnectionState.CONNECTING);
     try {
-      // Check if input is a valid IP address. If not, default to the user's fixed IP.
-    const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ipOrSsid);
-    let targetIp = isIp ? ipOrSsid : "10.255.240.30"; 
-    
-    console.log(`Attempting connection to ${targetIp}...`);
-      setActiveIp(targetIp);
+      const isIp = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ipOrSsid);
+      let targetIp = isIp ? ipOrSsid : "10.255.240.30"; 
       
+      setActiveIp(targetIp);
       const socket = new WebSocket(`ws://${targetIp}:82`);
       
       let connectionTimeout = setTimeout(() => {
         if (socket.readyState !== WebSocket.OPEN) {
-          console.log("Primary IP timed out. Trying AP Mode IP (192.168.4.1)...");
           socket.close();
           tryAPFallback();
         }
@@ -131,7 +157,6 @@ const App: React.FC = () => {
           setConnection(ConnectionState.CONNECTED);
           setConnectionMode('wireless');
           setSensors(prev => prev.map(s => ({ ...s, status: SensorStatus.READY })));
-          console.log(`Connected to AP Mode: ${apIp}`);
         };
 
         apSocket.onmessage = (event) => processSensorData(event.data);
@@ -148,23 +173,14 @@ const App: React.FC = () => {
         setConnection(ConnectionState.CONNECTED);
         setConnectionMode('wireless');
         setSensors(prev => prev.map(s => ({ ...s, status: SensorStatus.READY })));
-        console.log(`Connected to Station Mode: ${targetIp}`);
       };
 
-      socket.onmessage = (event) => {
-        processSensorData(event.data);
-      };
-
+      socket.onmessage = (event) => processSensorData(event.data);
       socket.onclose = () => {
         setConnection(ConnectionState.DISCONNECTED);
         setSensors(INITIAL_SENSORS);
       };
-
-      socket.onerror = (error) => {
-        setConnection(ConnectionState.ERROR);
-        console.error("WebSocket Error:", error);
-      };
-
+      socket.onerror = () => setConnection(ConnectionState.ERROR);
       sensorSocketRef.current = socket;
     } catch (err) {
       setConnection(ConnectionState.ERROR);
@@ -210,16 +226,38 @@ const App: React.FC = () => {
       lastUpdated: 'TEST_MODE'
     } : s));
 
-    // If connected via Serial, send TEST_PANIC command to Arduino
     if (connection === ConnectionState.CONNECTED && connectionMode === 'wired' && serialPortRef.current) {
       const writer = serialPortRef.current.writable.getWriter();
       const encoder = new TextEncoder();
       writer.write(encoder.encode("TEST_PANIC\n"));
       writer.releaseLock();
     }
-    // If connected via Wireless, send TEST_PANIC command to ESP32
     else if (connection === ConnectionState.CONNECTED && connectionMode === 'wireless' && sensorSocketRef.current) {
       sensorSocketRef.current.send("TEST_PANIC");
+    }
+  };
+
+  const setServoPos = (servo: 'H' | 'V' | 'X', pos: number) => {
+    const cmd = `SERVO:${servo}:${pos}\n`;
+    if (connection === ConnectionState.CONNECTED && connectionMode === 'wired' && serialPortRef.current) {
+      const writer = serialPortRef.current.writable.getWriter();
+      const encoder = new TextEncoder();
+      writer.write(encoder.encode(cmd));
+      writer.releaseLock();
+    } else if (connection === ConnectionState.CONNECTED && connectionMode === 'wireless' && sensorSocketRef.current) {
+      sensorSocketRef.current.send(cmd);
+    }
+  };
+
+  const togglePump = () => {
+    const cmd = isPumpActive ? "PUMP_OFF\n" : "PUMP_ON\n";
+    if (connection === ConnectionState.CONNECTED && connectionMode === 'wired' && serialPortRef.current) {
+      const writer = serialPortRef.current.writable.getWriter();
+      const encoder = new TextEncoder();
+      writer.write(encoder.encode(cmd));
+      writer.releaseLock();
+    } else if (connection === ConnectionState.CONNECTED && connectionMode === 'wireless' && sensorSocketRef.current) {
+      sensorSocketRef.current.send(cmd);
     }
   };
 
@@ -249,24 +287,18 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
+    if (sensors.length < 2) return;
     const point: HistoryPoint = {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
       alpha: sensors[0].value,
       beta: sensors[1].value,
-      gamma: sensors[2].value
     };
     setHistory(prev => [...prev.slice(-19), point]);
   }, [sensors]);
 
   if (isLoading) return <LoadingScreen onFinished={handleLoadingFinished} />;
-
-  if (isMobileAppMode) {
-    return <DownloadPage onBack={() => setIsMobileAppMode(false)} />;
-  }
-
-  if (isGuidesMode) {
-    return <GuidesPage onBack={() => setIsGuidesMode(false)} />;
-  }
+  if (isMobileAppMode) return <DownloadPage onBack={() => setIsMobileAppMode(false)} />;
+  if (isGuidesMode) return <GuidesPage onBack={() => setIsGuidesMode(false)} />;
 
   return (
     <div className={`transition-all duration-700 ease-out ${showDashboard ? 'opacity-100 scale-100' : 'opacity-100 scale-100'}`}>
@@ -299,7 +331,6 @@ const App: React.FC = () => {
           </div>
         </header>
         
-        {/* Navigation Controls */}
         <div className="mt-6 flex justify-end gap-3 md:gap-4">
           <button 
             onClick={() => setIsGuidesMode(true)}
@@ -347,7 +378,6 @@ const App: React.FC = () => {
                   </p>
                </div>
                <i className={`fa-solid ${sensors.some(s => s.status === SensorStatus.FIRE_DETECTED) ? 'fa-fire-alt' : 'fa-shield-halved'} text-4xl md:text-7xl text-white opacity-80 z-10`}></i>
-               <div className="absolute -right-4 -top-4 w-32 h-32 bg-white/10 blur-3xl rounded-full"></div>
             </div>
 
             <SensorStatusPanel sensors={sensors} />
@@ -361,6 +391,92 @@ const App: React.FC = () => {
             <div className="bg-stone-900 rounded-[35px] md:rounded-[45px] p-8 md:p-12 border-b-[10px] md:border-b-[15px] border-stone-950 flex flex-col gap-6 md:gap-8 shadow-2xl">
               <h4 className="text-[11px] md:text-xs font-black text-stone-500 uppercase tracking-widest border-l-4 border-orange-600 pl-4">Directive Control Console</h4>
               
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+                {/* Horizontal Servo Control */}
+                <div className="bg-black/40 p-6 rounded-3xl border border-white/5 flex flex-col gap-4">
+                  <div className="flex justify-between items-center">
+                    <p className="text-orange-500 font-black text-[10px] uppercase tracking-[0.2em]">Horizontal Servo</p>
+                    <i className="fa-solid fa-arrows-left-right text-stone-600"></i>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="20" 
+                    max="160" 
+                    defaultValue="90"
+                    onChange={(e) => setServoPos('H', parseInt(e.target.value))}
+                    className="w-full h-2 bg-stone-800 rounded-lg appearance-none cursor-pointer accent-orange-600"
+                  />
+                  <div className="flex justify-between text-[8px] font-bold text-stone-500 uppercase">
+                    <span>20°</span>
+                    <span>Center</span>
+                    <span>160°</span>
+                  </div>
+                </div>
+
+                {/* Vertical Servo Control */}
+                <div className="bg-black/40 p-6 rounded-3xl border border-white/5 flex flex-col gap-4">
+                  <div className="flex justify-between items-center">
+                    <p className="text-orange-500 font-black text-[10px] uppercase tracking-[0.2em]">Vertical Servo</p>
+                    <i className="fa-solid fa-arrows-up-down text-stone-600"></i>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="20" 
+                    max="160" 
+                    defaultValue="90"
+                    onChange={(e) => setServoPos('V', parseInt(e.target.value))}
+                    className="w-full h-2 bg-stone-800 rounded-lg appearance-none cursor-pointer accent-orange-600"
+                  />
+                  <div className="flex justify-between text-[8px] font-bold text-stone-500 uppercase">
+                    <span>20°</span>
+                    <span>Center</span>
+                    <span>160°</span>
+                  </div>
+                </div>
+
+                {/* Hose Servo Control */}
+                <div className="bg-black/40 p-6 rounded-3xl border border-white/5 flex flex-col gap-4">
+                  <div className="flex justify-between items-center">
+                    <p className="text-blue-500 font-black text-[10px] uppercase tracking-[0.2em]">Fire Hose Position</p>
+                    <i className="fa-solid fa-droplet text-stone-600"></i>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="20" 
+                    max="160" 
+                    defaultValue="90"
+                    onChange={(e) => setServoPos('X', parseInt(e.target.value))}
+                    className="w-full h-2 bg-stone-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  />
+                  <div className="flex justify-between text-[8px] font-bold text-stone-500 uppercase">
+                    <span>Left</span>
+                    <span>Center</span>
+                    <span>Right</span>
+                  </div>
+                </div>
+
+                {/* Water Pump Control */}
+                <div className="bg-black/40 p-6 rounded-3xl border border-white/5 flex flex-col gap-4">
+                  <div className="flex justify-between items-center">
+                    <p className="text-blue-500 font-black text-[10px] uppercase tracking-[0.2em]">Water Pump System</p>
+                    <i className={`fa-solid fa-power-off ${isPumpActive ? 'text-blue-500 animate-pulse' : 'text-stone-600'}`}></i>
+                  </div>
+                  <button 
+                    onClick={togglePump}
+                    className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 ${
+                      isPumpActive 
+                        ? 'bg-blue-600/20 text-blue-400 border border-blue-500/50' 
+                        : 'bg-stone-900 text-stone-500 border border-white/5 hover:border-blue-500/30'
+                    }`}
+                  >
+                    {isPumpActive ? 'Deactivate Pump' : 'Activate Pump'}
+                  </button>
+                  <p className="text-[8px] font-bold text-stone-500 uppercase text-center">
+                    Status: {isPumpActive ? 'Dispensing Water' : 'Standby'}
+                  </p>
+                </div>
+              </div>
+
               <button 
                 className="w-full bg-red-600 hover:bg-red-500 active:scale-95 text-white font-black py-5 md:py-8 rounded-2xl md:rounded-[35px] border-b-8 md:border-b-[12px] border-red-800 transition-all uppercase flex items-center justify-center gap-4 text-sm md:text-2xl shadow-xl"
                 onClick={triggerTestAlarm}

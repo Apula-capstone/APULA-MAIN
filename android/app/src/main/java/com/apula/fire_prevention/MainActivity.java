@@ -11,12 +11,18 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.util.Log;
+import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import com.getcapacitor.Bridge;
@@ -34,6 +40,21 @@ public class MainActivity extends BridgeActivity {
     private WebAppInterface webAppInterface;
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        // Add Global Exception Handler for debugging
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
+                Log.e("APULA_CRASH", "Uncaught Exception in thread " + t.getName(), e);
+            }
+        });
+
+        createNotificationChannel();
+    }
+
+    @Override
     public void onStart() {
         super.onStart();
         WebView webView = getBridge().getWebView();
@@ -49,7 +70,7 @@ public class MainActivity extends BridgeActivity {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 String path = request.getUrl().getPath();
-                if (path != null && (path.endsWith(".ttf") || path.endsWith(".woff2") || path.endsWith(".css") || path.endsWith(".js") || path.endsWith(".html"))) {
+                                                            if (path != null && (path.endsWith(".ttf") || path.endsWith(".woff2") || path.endsWith(".css") || path.endsWith(".js") || path.endsWith(".html"))) {
                     try {
                         String assetPath = "public" + path;
                         if (path.equals("/")) {
@@ -71,12 +92,14 @@ public class MainActivity extends BridgeActivity {
         webAppInterface = new WebAppInterface(this);
         webView.addJavascriptInterface(webAppInterface, "Android");
 
-        createNotificationChannel();
         requestPermissions();
-        startBackgroundService();
     }
 
+    private boolean isServiceRunning = false;
+
     private void startBackgroundService() {
+        if (isServiceRunning) return;
+        
         Intent serviceIntent = new Intent(this, FireAlertService.class);
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -84,6 +107,7 @@ public class MainActivity extends BridgeActivity {
             } else {
                 startService(serviceIntent);
             }
+            isServiceRunning = true;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -137,7 +161,34 @@ public class MainActivity extends BridgeActivity {
     private void initializeTelephony() {
         getUserPhoneNumber();
         TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        telephonyManager.listen(new CallStateListener(webAppInterface), PhoneStateListener.LISTEN_CALL_STATE);
+        if (telephonyManager != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // For Android 12+
+                Executor executor = Executors.newSingleThreadExecutor();
+                telephonyManager.registerTelephonyCallback(executor, new CallStateCallback(webAppInterface));
+            } else {
+                // For older versions
+                telephonyManager.listen(new CallStateListener(webAppInterface), PhoneStateListener.LISTEN_CALL_STATE);
+            }
+        }
+        startBackgroundService();
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    private class CallStateCallback extends TelephonyCallback implements TelephonyCallback.CallStateListener {
+        private final WebAppInterface webAppInterface;
+
+        CallStateCallback(WebAppInterface webAppInterface) {
+            this.webAppInterface = webAppInterface;
+        }
+
+        @Override
+        public void onCallStateChanged(int state) {
+            if (state == TelephonyManager.CALL_STATE_IDLE && isEmergencyCall) {
+                isEmergencyCall = false;
+                webAppInterface.makePhoneCall(emergencyNumber);
+            }
+        }
     }
 
     private void getUserPhoneNumber() {
@@ -190,43 +241,64 @@ public class MainActivity extends BridgeActivity {
 
         @JavascriptInterface
         public void showFireNotification(String title, String message) {
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext, CHANNEL_ID)
-                    .setSmallIcon(R.mipmap.ic_launcher)
-                    .setContentTitle(title)
-                    .setContentText(message)
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
-                    .setAutoCancel(true);
+            try {
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext, CHANNEL_ID)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle(title)
+                        .setContentText(message)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setAutoCancel(true);
 
-            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.notify(1, builder.build());
+                NotificationManager notificationManager = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+                if (notificationManager != null) {
+                    notificationManager.notify(1, builder.build());
+                }
+            } catch (Exception e) {
+                Log.e("APULA_JS", "Error showing notification", e);
+            }
         }
 
         @JavascriptInterface
         public void makePhoneCall(String phoneNumber) {
-            Intent intent = new Intent(Intent.ACTION_CALL);
-            intent.setData(Uri.parse("tel:" + phoneNumber));
-            if (intent.resolveActivity(getPackageManager()) != null) {
-                if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
-                    startActivity(intent);
+            try {
+                Intent intent = new Intent(Intent.ACTION_CALL);
+                intent.setData(Uri.parse("tel:" + phoneNumber));
+                if (intent.resolveActivity(mContext.getPackageManager()) != null) {
+                    if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+                        mContext.startActivity(intent);
+                    }
                 }
+            } catch (Exception e) {
+                Log.e("APULA_JS", "Error making call", e);
             }
         }
 
         @JavascriptInterface
         public void checkAndDial(String message) {
-            if (message.contains("FIRE_DETECTED")) {
-                if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(mContext, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
-                    isEmergencyCall = true;
-                    if (userNumber != null && !userNumber.isEmpty()) {
-                        makePhoneCall(userNumber);
+            try {
+                if (message.contains("FIRE_DETECTED")) {
+                    if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED &&
+                        ActivityCompat.checkSelfPermission(mContext, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+                        isEmergencyCall = true;
+                        if (userNumber != null && !userNumber.isEmpty()) {
+                            makePhoneCall(userNumber);
+                        } else {
+                            makePhoneCall(emergencyNumber);
+                        }
                     } else {
-                        // Fallback to emergency number if user number is not available
-                        makePhoneCall(emergencyNumber);
+                        // Request permissions from the activity context on UI thread
+                        if (mContext instanceof MainActivity) {
+                            ((MainActivity) mContext).runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ((MainActivity) mContext).requestPermissions();
+                                }
+                            });
+                        }
                     }
-                } else {
-                    requestPermissions();
                 }
+            } catch (Exception e) {
+                Log.e("APULA_JS", "Error in checkAndDial", e);
             }
         }
 

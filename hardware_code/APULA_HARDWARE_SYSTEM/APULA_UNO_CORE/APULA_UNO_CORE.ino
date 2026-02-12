@@ -12,8 +12,9 @@
 #include <SoftwareSerial.h>
 
 // ================= SIM800L =================
-// Use Pins 10 and 11 for SIM800L to avoid potential Pin 12/13 issues
-SoftwareSerial sim800(10, 11); 
+// ================= SIM800L =================
+// Using Pins 12 (RX) and 13 (TX) as per your hardware connection
+SoftwareSerial sim800(12, 13); 
 
 // Replace with your phone numbers
 String phoneNumber1 = "+639619113527";
@@ -26,15 +27,14 @@ const int flame3 = 4;
 
 // ================= LED & BUZZER =================
 const int redLED = 7;
-const int greenLED = 12; // Moved from 6 to free up pins
+const int greenLED = 6; // Moved to Pin 6 to avoid conflict with Pin 12
 const int buzzer = 8;
 
 // ================= SERVOS =================
 Servo servo1, servo2, servo3;
 const int servoPin1 = 9;
-// Note: servo2 and servo3 pins must be changed if using 10/11 for SIM800
-const int servoPin2 = A1; 
-const int servoPin3 = A2; 
+const int servoPin2 = 10; // Moved back to digital pins
+const int servoPin3 = 11; // Moved back to digital pins
 
 // ================= WATER PUMP =================
 const int pumpPin = 5; 

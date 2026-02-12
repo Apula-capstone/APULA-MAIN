@@ -1,4 +1,5 @@
 
+#ifdef ESP32
     #include "esp_http_server.h"
     #include "esp_camera.h"
     #include "img_converters.h"
@@ -126,3 +127,4 @@
             httpd_register_uri_handler(stream_httpd, &stream_uri);
         }
     }
+#endif

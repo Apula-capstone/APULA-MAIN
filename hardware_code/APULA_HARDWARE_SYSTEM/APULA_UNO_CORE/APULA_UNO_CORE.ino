@@ -121,7 +121,6 @@ void updateServos() {
     }
   }
 }
-#endif
 
 // ================= ALARM SYSTEM =================
 void updateAlarm() {

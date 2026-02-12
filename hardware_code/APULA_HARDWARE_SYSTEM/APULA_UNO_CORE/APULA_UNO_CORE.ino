@@ -19,6 +19,7 @@ SoftwareSerial sim800(12, 13);
 // Replace with your phone numbers
 String phoneNumber1 = "+639619113527";
 String phoneNumber2 = "+639511135809";
+String phoneNumber3 = "+639691640225";
 
 // ================= FLAME SENSORS =================
 const int flame1 = 2; 
@@ -162,6 +163,7 @@ void updateAlarm() {
     if (!callMade) {
       sendSMS(phoneNumber1, "FIRE DETECTED! APULA system has activated the water pump.");
       sendSMS(phoneNumber2, "FIRE DETECTED! APULA system has activated the water pump.");
+      sendSMS(phoneNumber3, "FIRE DETECTED! APULA system has activated the water pump.");
       makeCall();
       callMade = true;
     }
@@ -235,6 +237,18 @@ void makeCall() {
   delay(10000); // Lessened from 15000
   sim800.print("ATH\r"); // Hang up
   delay(500); // Lessened from 1000
+  debugSIM800();
+
+  // --- CALL THIRD NUMBER ---
+  Serial.print("GSM:DIALING_3:");
+  Serial.println(phoneNumber3);
+  sim800.print("ATD");
+  sim800.print(phoneNumber3);
+  sim800.print(";\r");
+  
+  delay(10000); 
+  sim800.print("ATH\r"); // Hang up
+  delay(500);
   debugSIM800();
   
   Serial.println("GSM:STATUS:SEQUENCE_FINISHED");

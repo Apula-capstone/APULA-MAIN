@@ -12,31 +12,32 @@
 #include <SoftwareSerial.h>
 
 // ================= SIM800L =================
-SoftwareSerial sim800(12, 13); // RX, TX (Ensure GND is shared)
+// Use Pins 10 and 11 for SIM800L to avoid potential Pin 12/13 issues
+SoftwareSerial sim800(10, 11); 
 
 // Replace with your phone numbers
 String phoneNumber1 = "+639619113527";
 String phoneNumber2 = "+639511135809";
 
 // ================= FLAME SENSORS =================
-// Using pins from provided code
 const int flame1 = 2; 
 const int flame2 = 3;
 const int flame3 = 4;
 
 // ================= LED & BUZZER =================
 const int redLED = 7;
-const int greenLED = 6;
+const int greenLED = 12; // Moved from 6 to free up pins
 const int buzzer = 8;
 
 // ================= SERVOS =================
 Servo servo1, servo2, servo3;
 const int servoPin1 = 9;
-const int servoPin2 = 10;
-const int servoPin3 = 11;
+// Note: servo2 and servo3 pins must be changed if using 10/11 for SIM800
+const int servoPin2 = A1; 
+const int servoPin3 = A2; 
 
 // ================= WATER PUMP =================
-const int pumpPin = 5; // Moved to Pin 5 to avoid conflict with Green LED (Pin 6)
+const int pumpPin = 5; 
 
 int angle1 = 0, angle2 = 0, angle3 = 0;
 int dir1 = 1, dir2 = 1, dir3 = 1;
@@ -51,8 +52,8 @@ const long servoInterval = 7;
 unsigned long lastBroadcast = 0;
 
 void setup() {
-  Serial.begin(115200); // Higher baud for ESP32/Web sync
-  sim800.begin(9600);
+  Serial.begin(115200); 
+  sim800.begin(9600); // Most SIM800L default to 9600 or autobaud
 
   pinMode(flame1, INPUT);
   pinMode(flame2, INPUT);
@@ -70,18 +71,20 @@ void setup() {
   Serial.println("SYSTEM_START: INITIALIZING...");
   
   // Sync SIM800L Baud Rate (Send AT several times)
-  for(int i=0; i<6; i++) { // Lessened from 10
+  for(int i=0; i<10; i++) {
     sim800.print("AT\r");
-    delay(200); // Lessened from 300
+    delay(200);
   }
   
-  sim800.print("ATE0\r"); // Echo OFF for cleaner communication
-  delay(200); // Lessened from 500
-  sim800.print("AT+CPIN?\r"); // Check SIM
-  delay(200); // Lessened from 500
+  sim800.print("ATE0\r"); 
+  delay(200);
+  sim800.print("AT+IPR=9600\r"); // Force 9600 baud rate
+  delay(200);
+  sim800.print("AT+CPIN?\r"); 
+  delay(200);
   debugSIM800();
   
-  delay(1500); // Lessened from 3000 (Wait for SIM800L network)
+  delay(1500); 
   Serial.println("SYSTEM_READY: MONITORING SENSORS");
 }
 

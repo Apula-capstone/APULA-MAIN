@@ -12,7 +12,7 @@
 #include <SoftwareSerial.h>
 
 // ================= SIM800L =================
-SoftwareSerial sim800(12, 13); // RX, TX (using pins from provided code)
+SoftwareSerial sim800(12, 13); // RX, TX (Ensure GND is shared)
 
 // Replace with your phone numbers
 String phoneNumber1 = "+639619113527";
@@ -36,7 +36,7 @@ const int servoPin2 = 10;
 const int servoPin3 = 11;
 
 // ================= WATER PUMP =================
-const int pumpPin = 6; // Pin 6 for water pump system
+const int pumpPin = 5; // Moved to Pin 5 to avoid conflict with Green LED (Pin 6)
 
 int angle1 = 0, angle2 = 0, angle3 = 0;
 int dir1 = 1, dir2 = 1, dir3 = 1;
@@ -68,6 +68,13 @@ void setup() {
   servo3.attach(servoPin3);
 
   Serial.println("SYSTEM_START: INITIALIZING...");
+  
+  // Sync SIM800L Baud Rate (Send AT several times)
+  for(int i=0; i<5; i++) {
+    sim800.println("AT");
+    delay(500);
+  }
+  
   delay(3000); // Wait for SIM800L network
   Serial.println("SYSTEM_READY: MONITORING SENSORS");
 }
@@ -152,38 +159,47 @@ void updateAlarm() {
 
 // ================= SIM800 CALL FUNCTION =================
 void makeCall() {
-  Serial.print("GSM:STATUS:PREPARING_CALL...");
+  Serial.println("GSM:STATUS:INITIATING_SEQUENCE");
   
-  // 1. Check if SIM800L is responsive
+  // Clean buffer
+  while(sim800.available()) sim800.read();
+
+  // 1. Basic Check
   sim800.println("AT");
   delay(500);
-  
-  // 2. Set to minimum functionality and back to full to reset radio if needed
+  debugSIM800();
+
+  // 2. Set Full Functionality
   sim800.println("AT+CFUN=1");
   delay(1000);
+  debugSIM800();
 
-  // 3. Check Signal Quality (Output will be in Serial Monitor)
-  sim800.println("AT+CSQ");
+  // 3. Check SIM Card Ready
+  sim800.println("AT+CPIN?");
   delay(500);
+  debugSIM800();
 
-  // 4. Check Network Registration
-  sim800.println("AT+CREG?");
+  // 4. Set Audio Path (Optional but helps for some modules)
+  sim800.println("AT+CHFA=1"); 
   delay(500);
+  debugSIM800();
 
-  Serial.print("GSM:CALLING:");
+  // --- CALL FIRST NUMBER ---
+  Serial.print("GSM:CALLING_1:");
   Serial.println(phoneNumber1);
-  
-  // 5. Dial first number
   sim800.print("ATD");
   sim800.print(phoneNumber1);
   sim800.println(";");
   
+  // Wait 20 seconds for the call to ring/connect
   delay(20000); 
+  
   sim800.println("ATH"); // Hang up
-  delay(2000);
+  delay(1000);
+  debugSIM800();
 
-  // 6. Dial second number
-  Serial.print("GSM:CALLING:");
+  // --- CALL SECOND NUMBER ---
+  Serial.print("GSM:CALLING_2:");
   Serial.println(phoneNumber2);
   sim800.print("ATD");
   sim800.print(phoneNumber2);
@@ -191,8 +207,21 @@ void makeCall() {
   
   delay(20000); 
   sim800.println("ATH"); // Hang up
+  delay(1000);
+  debugSIM800();
   
-  Serial.println("GSM:STATUS:CALL_ENDED");
+  Serial.println("GSM:STATUS:SEQUENCE_COMPLETE");
+}
+
+void debugSIM800() {
+  while (sim800.available()) {
+    String line = sim800.readStringUntil('\n');
+    line.trim();
+    if (line.length() > 0) {
+      Serial.print("SIM800_REPLY: ");
+      Serial.println(line);
+    }
+  }
 }
 
 // ================= WEB COMMUNICATION =================

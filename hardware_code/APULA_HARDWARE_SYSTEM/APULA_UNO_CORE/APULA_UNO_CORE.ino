@@ -122,18 +122,19 @@ void updateServos() {
     if (currentMillis - previousServoMillis >= servoInterval) {
       previousServoMillis = currentMillis;
 
+      // Scanning 0 to 160 degrees
       angle1 += dir1;
-      if (angle1 >= 180) dir1 = -1;
+      if (angle1 >= 160) dir1 = -1;
       if (angle1 <= 0) dir1 = 1;
       servo1.write(angle1);
 
       angle2 += dir2;
-      if (angle2 >= 180) dir2 = -1;
+      if (angle2 >= 160) dir2 = -1;
       if (angle2 <= 0) dir2 = 1;
       servo2.write(angle2);
 
       angle3 += dir3;
-      if (angle3 >= 180) dir3 = -1;
+      if (angle3 >= 160) dir3 = -1;
       if (angle3 <= 0) dir3 = 1;
       servo3.write(angle3);
     }

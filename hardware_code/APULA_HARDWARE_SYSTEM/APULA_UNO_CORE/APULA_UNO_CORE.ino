@@ -1,3 +1,4 @@
+#ifndef ESP32
 // ======================================================
 // APULA FIRE PREVENTION - ARDUINO UNO CORE (MAIN)
 // ======================================================
@@ -120,6 +121,7 @@ void updateServos() {
     }
   }
 }
+#endif
 
 // ================= ALARM SYSTEM =================
 void updateAlarm() {
@@ -204,3 +206,4 @@ void handleSerialCommands() {
     }
   }
 }
+#endif

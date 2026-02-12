@@ -70,10 +70,16 @@ void setup() {
   Serial.println("SYSTEM_START: INITIALIZING...");
   
   // Sync SIM800L Baud Rate (Send AT several times)
-  for(int i=0; i<5; i++) {
-    sim800.println("AT");
-    delay(500);
+  for(int i=0; i<10; i++) {
+    sim800.print("AT\r");
+    delay(300);
   }
+  
+  sim800.print("ATE0\r"); // Echo OFF for cleaner communication
+  delay(500);
+  sim800.print("AT+CPIN?\r"); // Check SIM
+  delay(500);
+  debugSIM800();
   
   delay(3000); // Wait for SIM800L network
   Serial.println("SYSTEM_READY: MONITORING SENSORS");
@@ -149,12 +155,33 @@ void updateAlarm() {
     digitalWrite(buzzer, HIGH);
     digitalWrite(pumpPin, HIGH); // Activate pump system
 
-    // Make call only once
+    // Send Alerts only once
     if (!callMade) {
+      sendSMS(phoneNumber1, "FIRE DETECTED! APULA system has activated the water pump.");
+      sendSMS(phoneNumber2, "FIRE DETECTED! APULA system has activated the water pump.");
       makeCall();
       callMade = true;
     }
   }
+}
+
+// ================= SIM800 SMS FUNCTION =================
+void sendSMS(String number, String text) {
+  Serial.print("GSM:SENDING_SMS_TO:");
+  Serial.println(number);
+
+  sim800.print("AT+CMGF=1\r"); // Set to text mode
+  delay(500);
+  sim800.print("AT+CMGS=\"");
+  sim800.print(number);
+  sim800.print("\"\r");
+  delay(500);
+  sim800.print(text);
+  delay(100);
+  sim800.write(26); // ASCII code for CTRL+Z to send
+  delay(3000); 
+  debugSIM800();
+  Serial.println("GSM:STATUS:SMS_SENT");
 }
 
 // ================= SIM800 CALL FUNCTION =================

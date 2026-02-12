@@ -33,11 +33,11 @@ const Statistics: React.FC<Props> = ({ data, fireCount }) => {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
-              <linearGradient id="colorAlpha" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="colorApolaki" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
                 <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
               </linearGradient>
-              <linearGradient id="colorBeta" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="colorKanlaon" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
                 <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
               </linearGradient>
@@ -76,8 +76,8 @@ const Statistics: React.FC<Props> = ({ data, fireCount }) => {
               stroke="#f97316" 
               strokeWidth={3}
               fillOpacity={1} 
-              fill="url(#colorAlpha)" 
-              name="Zone Alpha"
+              fill="url(#colorApolaki)" 
+              name="Apolaki Node"
               isAnimationActive={false}
             />
             <Area 
@@ -86,8 +86,8 @@ const Statistics: React.FC<Props> = ({ data, fireCount }) => {
               stroke="#ef4444" 
               strokeWidth={3}
               fillOpacity={1} 
-              fill="url(#colorBeta)" 
-              name="Zone Beta" 
+              fill="url(#colorKanlaon)" 
+              name="Kan-laon Node" 
               isAnimationActive={false}
             />
           </AreaChart>

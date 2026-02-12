@@ -151,21 +151,38 @@ void updateAlarm() {
 
 // ================= SIM800 CALL FUNCTION =================
 void makeCall() {
+  Serial.print("GSM:STATUS:PREPARING_CALL...");
+  
+  // 1. Check if SIM800L is responsive
+  sim800.println("AT");
+  delay(500);
+  
+  // 2. Set to minimum functionality and back to full to reset radio if needed
+  sim800.println("AT+CFUN=1");
+  delay(1000);
+
+  // 3. Check Signal Quality (Output will be in Serial Monitor)
+  sim800.println("AT+CSQ");
+  delay(500);
+
+  // 4. Check Network Registration
+  sim800.println("AT+CREG?");
+  delay(500);
+
   Serial.print("GSM:CALLING:");
   Serial.println(phoneNumber);
   
-  sim800.println("AT");
-  delay(1000);
-
+  // 5. Dial the number
   sim800.print("ATD");
   sim800.print(phoneNumber);
   sim800.println(";");
   
-  // Note: delay(20000) blocks the system. 
-  // Keeping it as requested, but system won't scan/detect until done.
+  // Wait for 20 seconds while call is active
+  // During this time, the buzzer and pump will remain ON because they were set before calling
   delay(20000); 
 
   sim800.println("ATH"); // Hang up
+  Serial.println("GSM:STATUS:CALL_ENDED");
 }
 
 // ================= WEB COMMUNICATION =================

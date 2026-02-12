@@ -23,6 +23,7 @@ import android.webkit.WebView;
 import android.util.Log;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import com.getcapacitor.Bridge;
@@ -281,31 +282,9 @@ public class MainActivity extends BridgeActivity {
                         ActivityCompat.checkSelfPermission(mContext, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
                         isEmergencyCall = true;
                         if (userNumber != null && !userNumber.isEmpty()) {
-                            makePhoneCall(userNumber);
-                        } else {
-                            makePhoneCall(emergencyNumber);
-                        }
-                    } else {
-                        // Request permissions from the activity context on UI thread
-                        if (mContext instanceof MainActivity) {
-                            ((MainActivity) mContext).runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    ((MainActivity) mContext).requestPermissions();
-                                }
-                            });
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                Log.e("APULA_JS", "Error in checkAndDial", e);
-            }
-        }
-
-        @JavascriptInterface
-        public void simulateFireAlert() {
-            showFireNotification("Fire Detected", "A fire has been detected in your area.");
-            checkAndDial("FIRE_DETECTED");
-        }
-    }
+                         
+   }
+}
+}
+}
 }

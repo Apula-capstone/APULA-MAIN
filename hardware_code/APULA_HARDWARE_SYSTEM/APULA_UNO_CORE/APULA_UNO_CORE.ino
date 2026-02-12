@@ -159,58 +159,59 @@ void updateAlarm() {
 
 // ================= SIM800 CALL FUNCTION =================
 void makeCall() {
-  Serial.println("GSM:STATUS:INITIATING_SEQUENCE");
+  Serial.println("GSM:STATUS:STARTING_DIAL_SEQUENCE");
   
-  // Clean buffer
+  // Clean any garbage in the buffer
   while(sim800.available()) sim800.read();
 
-  // 1. Basic Check
-  sim800.println("AT");
-  delay(500);
-  debugSIM800();
+  // 1. Force Wake Up & Sync
+  for(int i=0; i<3; i++) {
+    sim800.print("AT\r");
+    delay(500);
+    debugSIM800();
+  }
 
-  // 2. Set Full Functionality
-  sim800.println("AT+CFUN=1");
+  // 2. Check Network Registration (Critical)
+  // 0,1 means registered home, 0,5 means roaming. Anything else means NO SIGNAL.
+  sim800.print("AT+CREG?\r");
   delay(1000);
   debugSIM800();
 
-  // 3. Check SIM Card Ready
-  sim800.println("AT+CPIN?");
-  delay(500);
-  debugSIM800();
-
-  // 4. Set Audio Path (Optional but helps for some modules)
-  sim800.println("AT+CHFA=1"); 
-  delay(500);
+  // 3. Set to Full Functionality
+  sim800.print("AT+CFUN=1\r");
+  delay(1000);
   debugSIM800();
 
   // --- CALL FIRST NUMBER ---
-  Serial.print("GSM:CALLING_1:");
+  Serial.print("GSM:DIALING_1:");
   Serial.println(phoneNumber1);
+  
+  // Using \r explicitly instead of println for better compatibility
   sim800.print("ATD");
   sim800.print(phoneNumber1);
-  sim800.println(";");
+  sim800.print(";\r");
   
-  // Wait 20 seconds for the call to ring/connect
-  delay(20000); 
+  // Wait 15 seconds to allow the network to establish the handshake
+  // If the module blinks fast and resets here, it's a POWER issue.
+  delay(15000); 
   
-  sim800.println("ATH"); // Hang up
-  delay(1000);
+  sim800.print("ATH\r"); // Hang up
+  delay(2000);
   debugSIM800();
 
   // --- CALL SECOND NUMBER ---
-  Serial.print("GSM:CALLING_2:");
+  Serial.print("GSM:DIALING_2:");
   Serial.println(phoneNumber2);
   sim800.print("ATD");
   sim800.print(phoneNumber2);
-  sim800.println(";");
+  sim800.print(";\r");
   
-  delay(20000); 
-  sim800.println("ATH"); // Hang up
+  delay(15000); 
+  sim800.print("ATH\r"); // Hang up
   delay(1000);
   debugSIM800();
   
-  Serial.println("GSM:STATUS:SEQUENCE_COMPLETE");
+  Serial.println("GSM:STATUS:SEQUENCE_FINISHED");
 }
 
 void debugSIM800() {

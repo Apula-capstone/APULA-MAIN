@@ -70,18 +70,18 @@ void setup() {
   Serial.println("SYSTEM_START: INITIALIZING...");
   
   // Sync SIM800L Baud Rate (Send AT several times)
-  for(int i=0; i<10; i++) {
+  for(int i=0; i<6; i++) { // Lessened from 10
     sim800.print("AT\r");
-    delay(300);
+    delay(200); // Lessened from 300
   }
   
   sim800.print("ATE0\r"); // Echo OFF for cleaner communication
-  delay(500);
+  delay(200); // Lessened from 500
   sim800.print("AT+CPIN?\r"); // Check SIM
-  delay(500);
+  delay(200); // Lessened from 500
   debugSIM800();
   
-  delay(3000); // Wait for SIM800L network
+  delay(1500); // Lessened from 3000 (Wait for SIM800L network)
   Serial.println("SYSTEM_READY: MONITORING SENSORS");
 }
 
@@ -179,7 +179,7 @@ void sendSMS(String number, String text) {
   sim800.print(text);
   delay(100);
   sim800.write(26); // ASCII code for CTRL+Z to send
-  delay(3000); 
+  delay(1000); // Lessened from 3000
   debugSIM800();
   Serial.println("GSM:STATUS:SMS_SENT");
 }
@@ -192,38 +192,34 @@ void makeCall() {
   while(sim800.available()) sim800.read();
 
   // 1. Force Wake Up & Sync
-  for(int i=0; i<3; i++) {
+  for(int i=0; i<2; i++) { // Lessened from 3
     sim800.print("AT\r");
-    delay(500);
+    delay(200); // Lessened from 500
     debugSIM800();
   }
 
   // 2. Check Network Registration (Critical)
-  // 0,1 means registered home, 0,5 means roaming. Anything else means NO SIGNAL.
   sim800.print("AT+CREG?\r");
-  delay(1000);
+  delay(500); // Lessened from 1000
   debugSIM800();
 
   // 3. Set to Full Functionality
   sim800.print("AT+CFUN=1\r");
-  delay(1000);
+  delay(500); // Lessened from 1000
   debugSIM800();
 
   // --- CALL FIRST NUMBER ---
   Serial.print("GSM:DIALING_1:");
   Serial.println(phoneNumber1);
   
-  // Using \r explicitly instead of println for better compatibility
   sim800.print("ATD");
   sim800.print(phoneNumber1);
   sim800.print(";\r");
   
-  // Wait 15 seconds to allow the network to establish the handshake
-  // If the module blinks fast and resets here, it's a POWER issue.
-  delay(15000); 
+  delay(10000); // Lessened from 15000
   
   sim800.print("ATH\r"); // Hang up
-  delay(2000);
+  delay(1000); // Lessened from 2000
   debugSIM800();
 
   // --- CALL SECOND NUMBER ---
@@ -233,9 +229,9 @@ void makeCall() {
   sim800.print(phoneNumber2);
   sim800.print(";\r");
   
-  delay(15000); 
+  delay(10000); // Lessened from 15000
   sim800.print("ATH\r"); // Hang up
-  delay(1000);
+  delay(500); // Lessened from 1000
   debugSIM800();
   
   Serial.println("GSM:STATUS:SEQUENCE_FINISHED");

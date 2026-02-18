@@ -261,6 +261,16 @@ const App: React.FC = () => {
 
   const acknowledgeAlarm = () => {
     setIsAlarmActive(false);
+    
+    // Stop Android Alarm Sound
+    if ((window as any).Android) {
+      try {
+        (window as any).Android.stopAlarmSound();
+      } catch (e) {
+        console.error("Android stop alarm failed", e);
+      }
+    }
+
     if (isTestActive) {
       setIsTestActive(false);
       setSensors(prev => prev.map(s => ({ 

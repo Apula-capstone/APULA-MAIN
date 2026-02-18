@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -31,6 +32,7 @@ public class MainActivity extends BridgeActivity {
     private static final String CHANNEL_ID = "fire_alert_channel_v2";
     private static final int PERMISSIONS_REQUEST_CODE = 123;
     private WebAppInterface webAppInterface;
+    private MediaPlayer mediaPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -155,7 +157,50 @@ public class MainActivity extends BridgeActivity {
 
         @JavascriptInterface
         public void simulateFireAlert() {
+            // Maximize Volume
+            AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            if (audioManager != null) {
+                int maxAlarm = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM);
+                audioManager.setStreamVolume(AudioManager.STREAM_ALARM, maxAlarm, 0);
+                
+                int maxMusic = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxMusic, 0);
+            }
+
+            // Start Looped Native Sound
+            try {
+                if (mediaPlayer == null) {
+                    mediaPlayer = MediaPlayer.create(mContext, R.raw.sound);
+                    mediaPlayer.setAudioAttributes(
+                        new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                    );
+                    mediaPlayer.setLooping(true);
+                }
+                if (!mediaPlayer.isPlaying()) {
+                    mediaPlayer.start();
+                }
+            } catch (Exception e) {
+                Log.e("FireAlert", "Error playing sound", e);
+            }
+
             showFireNotification("Fire Detected", "A fire has been detected in your area.");
+        }
+
+        @JavascriptInterface
+        public void stopAlarmSound() {
+            try {
+                if (mediaPlayer != null) {
+                    if (mediaPlayer.isPlaying()) {
+                        mediaPlayer.pause();
+                        mediaPlayer.seekTo(0);
+                    }
+                }
+            } catch (Exception e) {
+                Log.e("FireAlert", "Error stopping sound", e);
+            }
         }
     }
 }

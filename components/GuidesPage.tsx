@@ -122,22 +122,6 @@ const GuidesPage: React.FC<Props> = ({ onBack }) => {
                     <li className="text-orange-500 italic mt-2">Note: Cross-connect TX to RX for data flow.</li>
                   </ul>
                 </div>
-
-                <div className="bg-emerald-600/10 border border-emerald-500/30 p-5 rounded-2xl">
-                  <h3 className="text-xs font-black text-emerald-400 uppercase tracking-widest mb-3">SIM800L <i className="fa-solid fa-arrows-left-right"></i> Arduino (SMS)</h3>
-                  <ul className="text-[11px] font-bold text-stone-300 space-y-2">
-                    <li className="flex justify-between border-b border-white/5 pb-2">
-                      <span>SIM <span className="text-emerald-500">TX</span></span>
-                      <span className="text-white">→</span>
-                      <span>Arduino <span className="text-emerald-500">Pin 3 (RX)</span></span>
-                    </li>
-                    <li className="flex justify-between border-b border-white/5 pb-2">
-                      <span>SIM <span className="text-emerald-500">RX</span></span>
-                      <span className="text-white">→</span>
-                      <span>Arduino <span className="text-emerald-500">Pin 2 (TX)</span></span>
-                    </li>
-                  </ul>
-                </div>
               </div>
 
               <div className="bg-red-600/10 border-2 border-red-500/40 p-6 rounded-[30px] flex flex-col justify-center">
@@ -148,7 +132,7 @@ const GuidesPage: React.FC<Props> = ({ onBack }) => {
                   <h3 className="text-lg font-black text-white uppercase leading-none">Critical Upload Rule</h3>
                 </div>
                 <p className="text-[11px] font-bold text-stone-300 leading-relaxed">
-                  Because the <span className="text-white underline">ESP32</span> and <span className="text-white underline">SIM800L</span> are physically connected to the Arduino's communication pins:
+                  Because the <span className="text-white underline">ESP32</span> is physically connected to the Arduino's communication pins:
                 </p>
                 <div className="mt-4 space-y-3">
                   <div className="bg-black/40 p-3 rounded-xl border border-red-500/20">
@@ -180,12 +164,12 @@ const GuidesPage: React.FC<Props> = ({ onBack }) => {
                 <h3 className="text-sm font-black text-orange-500 uppercase tracking-widest mb-3">Multi-Breadboard Setup</h3>
                 <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
                   <p className="text-[11px] text-stone-400 mb-3 leading-relaxed">
-                    If using a <span className="text-white">Half Breadboard</span> (Sensors/Servos) and a <span className="text-white">Whole Breadboard</span> (ESP32/SIM800L), you MUST bridge them:
+                    If using a <span className="text-white">Half Breadboard</span> (Sensors/Servos) and a <span className="text-white">Whole Breadboard</span> (ESP32), you MUST bridge them:
                   </p>
                   <ul className="text-xs font-bold text-stone-300 space-y-3">
                     <li>1. <span className="text-blue-500">Bridge GND:</span> Run a jumper from the Blue Rail of the Half board to the Blue Rail of the Whole board.</li>
                     <li>2. <span className="text-red-500">Bridge 5V:</span> Run a jumper from the Red Rail of the Half board to the Red Rail of the Whole board.</li>
-                    <li className="text-orange-400 italic font-black">Without this bridge, the Arduino cannot read the sensors or talk to the SIM800L!</li>
+                    <li className="text-orange-400 italic font-black">Without this bridge, the Arduino cannot read the sensors or talk to the ESP32!</li>
                   </ul>
                 </div>
               </div>
@@ -655,65 +639,6 @@ const GuidesPage: React.FC<Props> = ({ onBack }) => {
                 <p className="text-stone-300 text-[11px] font-bold leading-relaxed">
                   Connect to <span className="text-white">APULA_FIRE_SYSTEM</span> WiFi, click "Connect" in the dashboard. You should see the sensor values jump between 0% and 100% automatically.
                 </p>
-              </div>
-            </div>
-          </section>
-
-          {/* GSM & SMS Alert System */}
-          <section className="bg-stone-900 rounded-[30px] p-8 border border-white/5">
-            <h2 className="text-2xl font-black uppercase tracking-tight mb-4 text-white flex items-center gap-3">
-              <i className="fa-solid fa-tower-cell text-orange-500"></i>
-              GSM & SMS Alert System
-            </h2>
-            <p className="text-stone-400 text-sm font-bold mb-6">
-              The APULA system uses a SIM800L module to provide emergency communication even without internet access.
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-black/40 p-6 rounded-2xl border border-white/5">
-                <p className="text-orange-500 font-black text-[10px] tracking-widest uppercase mb-4">SIM800L Wiring</p>
-                <ul className="space-y-3">
-                  <li className="flex justify-between items-center text-[11px] font-bold">
-                    <span className="text-stone-400">Arduino 5V</span>
-                    <i className="fa-solid fa-arrow-right text-stone-700"></i>
-                    <span className="text-white">SIM800L VCC (5V)</span>
-                  </li>
-                  <li className="flex justify-between items-center text-[11px] font-bold">
-                    <span className="text-stone-400">Arduino GND</span>
-                    <i className="fa-solid fa-arrow-right text-stone-700"></i>
-                    <span className="text-white">SIM800L GND</span>
-                  </li>
-                  <li className="flex justify-between items-center text-[11px] font-bold">
-                    <span className="text-stone-400">Arduino Pin 2 (TX)</span>
-                    <i className="fa-solid fa-arrow-right text-stone-700"></i>
-                    <span className="text-white">SIM800L RX</span>
-                  </li>
-                  <li className="flex justify-between items-center text-[11px] font-bold">
-                    <span className="text-stone-400">Arduino Pin 3 (RX)</span>
-                    <i className="fa-solid fa-arrow-right text-stone-700"></i>
-                    <span className="text-white">SIM800L TX</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-orange-500/5 border border-orange-500/20 p-6 rounded-2xl">
-                  <p className="text-orange-500 font-black uppercase text-[10px] tracking-widest mb-2">System Response</p>
-                  <ul className="text-xs font-bold text-stone-300 space-y-2">
-                    <li>• Trigger: <span className="text-white">Flame Detection &gt; 50%</span></li>
-                    <li>• SMS: <span className="text-white">"ALERT: FIRE DETECTED!"</span></li>
-                    <li>• Voice: <span className="text-white">Automated Emergency Call</span></li>
-                  </ul>
-                </div>
-                <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-xl">
-                  <p className="text-blue-500 font-black text-[10px] tracking-widest uppercase mb-1 flex items-center gap-2">
-                    <i className="fa-solid fa-info-circle"></i>
-                    Dashboard Sync
-                  </p>
-                  <p className="text-[10px] text-stone-400 font-bold leading-relaxed">
-                    Update the target phone number directly from the <span className="text-white">GSM Settings</span> panel on the dashboard.
-                  </p>
-                </div>
               </div>
             </div>
           </section>

@@ -137,42 +137,6 @@ const DownloadPage: React.FC<Props> = ({ onBack }) => {
                     <p className="text-stone-500 text-[10px] font-bold">The app will sync with your Arduino Node automatically.</p>
                   </div>
                 </div>
-
-                {/* SMS & SIM800L Setup */}
-                <div className="bg-orange-500/10 border border-orange-500/20 rounded-2xl p-6 mb-4">
-                  <p className="text-orange-500 text-xs font-black uppercase mb-3 flex items-center gap-2">
-                    <i className="fa-solid fa-signal"></i>
-                    SIM800L Hardware SMS
-                  </p>
-                  <p className="text-stone-500 text-xs font-bold leading-relaxed mb-4">
-                    The mobile app works with the **SIM800L module** to send SMS alerts directly to your phone.
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3 text-[10px] font-bold text-stone-600">
-                      <i className="fa-solid fa-check text-emerald-500"></i>
-                      <span>Connect SIM800L to Arduino Pins 2 & 3</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-[10px] font-bold text-stone-600">
-                      <i className="fa-solid fa-check text-emerald-500"></i>
-                      <span>Use external 4V Power for SIM800L</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-[10px] font-bold text-stone-600">
-                      <i className="fa-solid fa-check text-emerald-500"></i>
-                      <span>App automatically registers your phone number</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Permissions Reminder */}
-                <div className="bg-stone-100 rounded-2xl p-4">
-                  <p className="text-stone-500 text-[10px] font-black uppercase mb-1">
-                    <i className="fa-solid fa-circle-info mr-2"></i>
-                    SMS Permissions
-                  </p>
-                  <p className="text-stone-400 text-[10px] font-bold leading-tight">
-                    Ensure the app has **SMS Permissions** enabled in your phone's settings to receive emergency alerts.
-                  </p>
-                </div>
               </div>
             </div>
           </section>

@@ -108,10 +108,6 @@ const Statistics: React.FC<Props> = ({ data, fireCount }) => {
           <p className="text-[9px] md:text-[11px] font-black uppercase text-stone-500 mb-1 tracking-widest">System Load</p>
           <p className="text-xl md:text-4xl font-black text-white">LOW</p>
         </div>
-        <div className="bg-stone-800 p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-8 border-blue-500 text-center col-span-2 lg:col-span-1">
-          <p className="text-[9px] md:text-[11px] font-black uppercase text-stone-500 mb-1 tracking-widest">SMS Gateway</p>
-          <p className="text-xl md:text-4xl font-black text-white">READY</p>
-        </div>
       </div>
     </div>
   );

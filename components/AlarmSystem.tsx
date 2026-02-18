@@ -12,7 +12,8 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
   useEffect(() => {
     if (isActive) {
       if (!audioRef.current) {
-        audioRef.current = new Audio('/sound.mp3');
+        // Use relative path for better compatibility with Capacitor/Android WebView
+        audioRef.current = new Audio('sound.mp3');
         audioRef.current.loop = true;
       }
       

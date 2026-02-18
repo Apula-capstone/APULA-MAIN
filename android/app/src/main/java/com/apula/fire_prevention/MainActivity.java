@@ -3,6 +3,7 @@ package com.apula.fire_prevention;
 import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -26,7 +27,7 @@ import java.util.ArrayList;
 
 public class MainActivity extends BridgeActivity {
 
-    private static final String CHANNEL_ID = "fire_alert_channel";
+    private static final String CHANNEL_ID = "fire_alert_channel_v2";
     private static final int PERMISSIONS_REQUEST_CODE = 123;
     private WebAppInterface webAppInterface;
 
@@ -92,6 +93,10 @@ public class MainActivity extends BridgeActivity {
             channel.enableVibration(true);
             channel.setVibrationPattern(new long[]{0, 500, 200, 500});
             
+            // Set Custom Sound
+            Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName() + "/" + R.raw.sound);
+            channel.setSound(soundUri, audioAttributes);
+            
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
@@ -113,6 +118,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     public void showFireNotification(String title, String message) {
+        Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName() + "/" + R.raw.sound);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(title)
@@ -120,6 +126,7 @@ public class MainActivity extends BridgeActivity {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setAutoCancel(true)
+                .setSound(soundUri)
                 .setVibrate(new long[]{0, 500, 200, 500});
 
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);

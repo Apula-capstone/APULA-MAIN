@@ -15,6 +15,7 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
         // Use relative path for better compatibility with Capacitor/Android WebView
         audioRef.current = new Audio('sound.mp3');
         audioRef.current.loop = true;
+        audioRef.current.volume = 1.0; // Force maximum volume
       }
       
       audioRef.current.play().catch(error => {

@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -118,6 +119,13 @@ public class MainActivity extends BridgeActivity {
     }
 
     public void showFireNotification(String title, String message) {
+        // Force Max Volume for Alarm Stream
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (audioManager != null) {
+            int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM);
+            audioManager.setStreamVolume(AudioManager.STREAM_ALARM, maxVolume, 0);
+        }
+
         Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName() + "/" + R.raw.sound);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)

@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -157,14 +158,40 @@ public class MainActivity extends BridgeActivity {
 
         @JavascriptInterface
         public void simulateFireAlert() {
-            // Maximize Volume
+            // Maximize Volume for all relevant streams
             AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
             if (audioManager != null) {
-                int maxAlarm = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM);
-                audioManager.setStreamVolume(AudioManager.STREAM_ALARM, maxAlarm, 0);
-                
-                int maxMusic = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxMusic, 0);
+                try {
+                    // Force max volume on ALARM stream (primary)
+                    int maxAlarm = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM);
+                    audioManager.setStreamVolume(AudioManager.STREAM_ALARM, maxAlarm, 0);
+                    
+                    // Force max volume on MUSIC stream (fallback/parallel)
+                    int maxMusic = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxMusic, 0);
+
+                    // Force max volume on RING stream (just in case)
+                    int maxRing = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
+                    audioManager.setStreamVolume(AudioManager.STREAM_RING, maxRing, 0);
+                    
+                    // Request Audio Focus to ensure we are heard over other apps
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        AudioAttributes playbackAttributes = new AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_ALARM)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                .build();
+                        AudioFocusRequest focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                                .setAudioAttributes(playbackAttributes)
+                                .setAcceptsDelayedFocusGain(false)
+                                .setWillPauseWhenDucked(false)
+                                .build();
+                        audioManager.requestAudioFocus(focusRequest);
+                    } else {
+                        audioManager.requestAudioFocus(null, AudioManager.STREAM_ALARM, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+                    }
+                } catch (SecurityException e) {
+                    Log.e("FireAlert", "Could not set volume or focus: " + e.getMessage());
+                }
             }
 
             // Start Looped Native Sound
@@ -178,6 +205,7 @@ public class MainActivity extends BridgeActivity {
                         .build()
                     );
                     mediaPlayer.setLooping(true);
+                    mediaPlayer.setVolume(1.0f, 1.0f); // Force player to max volume
                 }
                 if (!mediaPlayer.isPlaying()) {
                     mediaPlayer.start();

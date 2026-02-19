@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef ESP32
+
 /*
  * Minimal camera_index.h for APULA
  * This file contains the HTML for the ESP32-CAM's own web page.
@@ -172,3 +174,5 @@ const char index_html[] PROGMEM = R"rawtext(
     </body>
 </html>
 )rawtext";
+
+#endif

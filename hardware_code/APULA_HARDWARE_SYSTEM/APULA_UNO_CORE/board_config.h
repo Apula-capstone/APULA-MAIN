@@ -1,6 +1,7 @@
 
 #pragma once
 
+#ifdef ESP32
 // ===========================
 // Select camera model
 // ===========================
@@ -9,3 +10,4 @@
 #endif
 
 #include "camera_pins.h"
+#endif

@@ -1,6 +1,8 @@
 
 #pragma once
 
+#ifdef ESP32
+
 #if defined(CAMERA_MODEL_WROVER_KIT)
 #define PWDN_GPIO_NUM    -1
 #define RESET_GPIO_NUM   -1
@@ -274,3 +276,5 @@
 #else
 #error "Camera model not selected"
 #endif
+
+#endif // ESP32

@@ -21,12 +21,13 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.util.Log;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebViewClient;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Map;
 
 public class MainActivity extends BridgeActivity {
 
@@ -34,6 +35,47 @@ public class MainActivity extends BridgeActivity {
     private static final int PERMISSIONS_REQUEST_CODE = 123;
     private WebAppInterface webAppInterface;
     private MediaPlayer mediaPlayer;
+
+    // Helper class to wrap a WebResourceRequest and change its URL
+    private static class PatchedRequest implements WebResourceRequest {
+        private final WebResourceRequest original;
+        private final Uri patchedUri;
+
+        PatchedRequest(WebResourceRequest original, String newPath) {
+            this.original = original;
+            this.patchedUri = original.getUrl().buildUpon().path(newPath).build();
+        }
+
+        @Override
+        public Uri getUrl() {
+            return patchedUri;
+        }
+
+        @Override
+        public boolean isForMainFrame() {
+            return original.isForMainFrame();
+        }
+
+        @Override
+        public boolean isRedirect() {
+            return original.isRedirect();
+        }
+
+        @Override
+        public boolean hasGesture() {
+            return original.hasGesture();
+        }
+
+        @Override
+        public String getMethod() {
+            return original.getMethod();
+        }
+
+        @Override
+        public Map<String, String> getRequestHeaders() {
+            return original.getRequestHeaders();
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,13 +87,11 @@ public class MainActivity extends BridgeActivity {
         webAppInterface = new WebAppInterface(this);
         
         // Setup WebView
-        WebView webView = findViewById(R.id.webview);
-        if (webView != null) {
-            setupWebView(webView);
-        }
+        setupWebView();
     }
 
-    private void setupWebView(WebView webView) {
+    private void setupWebView() {
+        WebView webView = getBridge().getWebView();
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
@@ -64,20 +104,19 @@ public class MainActivity extends BridgeActivity {
         webView.addJavascriptInterface(webAppInterface, "Android");
         
         // Set WebViewClient
-        webView.setWebViewClient(new BridgeWebViewClient(this.bridge) {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return false;
-            }
-
+        webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                String path = request.getUrl().getPath();
+
+                if (getBridge().getLocalServer().isLocalRequest(request) && path != null && path.startsWith("/APULA-MAIN")) {
+                    String newPath = path.substring("/APULA-MAIN".length());
+                    return getBridge().getLocalServer().shouldInterceptRequest(new PatchedRequest(request, newPath));
+                }
+
                 return super.shouldInterceptRequest(view, request);
             }
         });
-
-        // Load the local HTML file
-        webView.loadUrl("file:///android_asset/public/index.html");
     }
 
     private void createNotificationChannel() {

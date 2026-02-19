@@ -11,6 +11,7 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
+  const [audioError, setAudioError] = React.useState<string | null>(null);
 
   useEffect(() => {
     if (isActive) {
@@ -23,52 +24,66 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
         return; 
       }
 
-      if (!audioRef.current) {
-          // Create Audio element
-          // Use absolute path for reliability across routes
-          audioRef.current = new Audio('/sound.mp3');
-          audioRef.current.loop = true;
-          // Basic volume
-          audioRef.current.volume = 1.0; 
-
-          // Web Audio API for extra amplification (Gain)
-          try {
-            const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
-            if (AudioContextClass) {
-              const audioCtx = new AudioContextClass();
-              audioContextRef.current = audioCtx;
-              
-              const source = audioCtx.createMediaElementSource(audioRef.current);
-              sourceNodeRef.current = source;
-              
-              const gainNode = audioCtx.createGain();
-              // Set gain to 2.0 (200% volume) as requested for Web
-              gainNode.gain.value = 2.0; 
-              gainNodeRef.current = gainNode;
-              
-              source.connect(gainNode);
-              gainNode.connect(audioCtx.destination);
-            }
-          } catch (e) {
-            console.error("Web Audio API setup failed, falling back to standard audio", e);
-          }
-      }
-      
-      const playAudio = async () => {
+      const initializeAudio = async () => {
         try {
+          if (!audioRef.current) {
+              // Create Audio element
+              // Use absolute path for reliability across routes
+              console.log("Initializing Alarm Audio...");
+              const audio = new Audio('/sound.mp3');
+              audio.loop = true;
+              audio.volume = 1.0; 
+              audioRef.current = audio;
+
+              // Web Audio API for extra amplification (Gain)
+              try {
+                const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+                if (AudioContextClass) {
+                  const audioCtx = new AudioContextClass();
+                  audioContextRef.current = audioCtx;
+                  
+                  const source = audioCtx.createMediaElementSource(audio);
+                  sourceNodeRef.current = source;
+                  
+                  const gainNode = audioCtx.createGain();
+                  // Set gain to 2.0 (200% volume) as requested for Web
+                  gainNode.gain.value = 2.0; 
+                  gainNodeRef.current = gainNode;
+                  
+                  source.connect(gainNode);
+                  gainNode.connect(audioCtx.destination);
+                  console.log("Web Audio API initialized with Gain 2.0");
+                }
+              } catch (e) {
+                console.error("Web Audio API setup failed, falling back to standard audio", e);
+              }
+          }
+          
           if (audioRef.current) {
             // Resume context if suspended (browser policy)
             if (audioContextRef.current?.state === 'suspended') {
               await audioContextRef.current.resume();
             }
-            await audioRef.current.play();
+            
+            const playPromise = audioRef.current.play();
+            if (playPromise !== undefined) {
+              playPromise.catch(error => {
+                console.error("Audio playback failed:", error);
+                if (error.name === 'NotAllowedError') {
+                  setAudioError("Browser blocked audio. Click 'Enable Sound' below.");
+                } else {
+                  setAudioError(`Audio Error: ${error.message}`);
+                }
+              });
+            }
           }
-        } catch (error) {
-          console.error("Audio playback failed:", error);
+        } catch (error: any) {
+          console.error("General Audio Error:", error);
+          setAudioError(`Audio System Error: ${error.message || error}`);
         }
       };
 
-      playAudio();
+      initializeAudio();
 
     } else {
       // Stop and reset
@@ -104,6 +119,9 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 sm:p-8 bg-red-700/90 backdrop-blur-xl border-[10px] sm:border-[20px] md:border-[32px] border-red-600 animate-emergency-flash overflow-hidden">
+      {/* Hidden button to satisfy interaction requirements if needed early */}
+      <button className="sr-only" onClick={() => {}}>Focus Trap</button>
+
       {/* White Alert Box: Using max-h-full and flex-shrink to ensure it fits in landscape mobile */}
       <div className="bg-white p-6 sm:p-10 md:p-14 rounded-[30px] sm:rounded-[50px] shadow-[0_0_100px_rgba(0,0,0,0.8)] border-4 sm:border-8 border-black flex flex-col items-center gap-4 sm:gap-6 md:gap-8 w-full max-w-lg md:max-w-2xl text-center relative overflow-hidden flex-shrink max-h-full">
         
@@ -119,6 +137,23 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
           <i className="fa-solid fa-skull-crossbones text-4xl sm:text-6xl md:text-9xl text-white"></i>
         </div>
         
+        {/* Error Message if Audio Fails */}
+        {audioError && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 w-full" role="alert">
+            <p className="font-bold">Audio Blocked</p>
+            <p>{audioError}</p>
+            <button 
+              onClick={() => {
+                if (audioContextRef.current) audioContextRef.current.resume();
+                if (audioRef.current) audioRef.current.play().then(() => setAudioError(null));
+              }}
+              className="mt-2 bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
+            >
+              ENABLE SOUND
+            </button>
+          </div>
+        )}
+
         {/* Text Section: Adjusting sizes for different viewports */}
         <div className="space-y-1 md:space-y-4 overflow-y-auto min-h-0">
           <h2 className="text-3xl sm:text-5xl md:text-8xl font-black text-red-600 tracking-tighter leading-none uppercase italic">

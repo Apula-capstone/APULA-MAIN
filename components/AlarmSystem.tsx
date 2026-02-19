@@ -8,20 +8,59 @@ interface Props {
 
 const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
 
   useEffect(() => {
     if (isActive) {
       if (!audioRef.current) {
-        // Use relative path for better compatibility with Capacitor/Android WebView
-        audioRef.current = new Audio('sound.mp3');
-        audioRef.current.loop = true;
-        audioRef.current.volume = 1.0; // Force maximum volume
-      }
+          // Create Audio element
+          // Use absolute path for reliability across routes
+          audioRef.current = new Audio('/sound.mp3');
+          audioRef.current.loop = true;
+          // Basic volume
+          audioRef.current.volume = 1.0; 
+
+          // Web Audio API for extra amplification (Gain)
+          try {
+            const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+            if (AudioContextClass) {
+              const audioCtx = new AudioContextClass();
+              audioContextRef.current = audioCtx;
+              
+              const source = audioCtx.createMediaElementSource(audioRef.current);
+              sourceNodeRef.current = source;
+              
+              const gainNode = audioCtx.createGain();
+              // Set gain to 3.0 (300% volume) - might clip but will be LOUD
+              gainNode.gain.value = 3.0; 
+              gainNodeRef.current = gainNode;
+              
+              source.connect(gainNode);
+              gainNode.connect(audioCtx.destination);
+            }
+          } catch (e) {
+            console.error("Web Audio API setup failed, falling back to standard audio", e);
+          }
+        }
       
-      audioRef.current.play().catch(error => {
-        console.error("Audio playback failed:", error);
-      });
+      const playAudio = async () => {
+        try {
+          // Resume context if suspended (browser policy)
+          if (audioContextRef.current?.state === 'suspended') {
+            await audioContextRef.current.resume();
+          }
+          await audioRef.current?.play();
+        } catch (error) {
+          console.error("Audio playback failed:", error);
+        }
+      };
+
+      playAudio();
+
     } else {
+      // Stop and reset
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
@@ -29,12 +68,26 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
     }
 
     return () => {
+      // Cleanup is handled better in a separate effect or just ensure pause on unmount
+      // But for this component which might unmount/remount, we should be careful.
+      // If isActive becomes false, we pause.
+      // If component unmounts, we should cleanup context.
+    };
+  }, [isActive]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
     };
-  }, [isActive]);
+  }, []);
 
   if (!isActive) return null;
 

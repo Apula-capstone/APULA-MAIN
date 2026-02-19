@@ -15,6 +15,7 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
 
   const [audioError, setAudioError] = React.useState<string | null>(null);
   const [audioStatus, setAudioStatus] = React.useState<string>("Initializing...");
+  const [isBufferLoaded, setIsBufferLoaded] = React.useState(false); // New State to track buffer loading
 
   useEffect(() => {
     // Initialize Audio Context on first interaction or mount
@@ -33,6 +34,7 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
             .then(audioBuffer => {
               bufferRef.current = audioBuffer;
               setAudioStatus("MP3 Siren Loaded");
+              setIsBufferLoaded(true); // Signal readiness
             })
             .catch(e => {
               console.error("Failed to load MP3:", e);
@@ -55,17 +57,26 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
     initAudio();
     
     // Also init on any click to unlock AudioContext
-    window.addEventListener('click', () => {
+    const unlockAudio = () => {
       if (audioContextRef.current?.state === 'suspended') {
-        audioContextRef.current.resume();
+        audioContextRef.current.resume().then(() => {
+             console.log("Audio Context Resumed by User Interaction");
+        });
       }
-    }, { once: true });
+    };
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+
+    return () => {
+        window.removeEventListener('click', unlockAudio);
+        window.removeEventListener('touchstart', unlockAudio);
+    }
 
   }, []);
 
   const playAlarmSound = async () => {
     if (!audioContextRef.current || !bufferRef.current || !gainNodeRef.current) {
-      setAudioStatus("Audio Not Ready");
+      setAudioStatus("Audio Not Ready (Wait for Load)");
       return;
     }
 
@@ -73,6 +84,11 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
       // Resume context if suspended (autoplay policy)
       if (audioContextRef.current.state === 'suspended') {
         await audioContextRef.current.resume();
+      }
+
+      // Check if already playing to avoid overlapping
+      if (sourceRef.current) {
+         return; 
       }
 
       // Create source from buffer
@@ -90,6 +106,18 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
       console.error("Playback Error:", e);
       setAudioError(e.message);
       setAudioStatus("Playback Failed");
+      
+      // Fallback to HTML5 Audio if Web Audio API fails
+      try {
+          const fallbackAudio = new Audio('/sound.mp3');
+          fallbackAudio.loop = true;
+          fallbackAudio.volume = 1.0;
+          await fallbackAudio.play();
+          audioRef.current = fallbackAudio; // Store ref to stop later
+          setAudioStatus("Playing (HTML5 Fallback)");
+      } catch (fallbackError: any) {
+          setAudioStatus("ALL AUDIO FAILED: " + fallbackError.message);
+      }
     }
   };
 
@@ -104,16 +132,24 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
         console.error("Stop Error:", e);
       }
     }
+    // Stop Fallback Audio
+    if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current = null;
+    }
   };
 
   useEffect(() => {
-    if (isActive) {
+    if (isActive && isBufferLoaded) { // Only play if active AND loaded
       playAlarmSound();
-    } else {
+    } else if (!isActive) {
       stopAlarmSound();
     }
+    // Cleanup on unmount or inactive
     return () => stopAlarmSound();
-  }, [isActive]);
+  }, [isActive, isBufferLoaded]); // Add isBufferLoaded dependency
+
 
   if (!isActive) return null;
 

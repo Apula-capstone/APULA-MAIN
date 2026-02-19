@@ -394,12 +394,19 @@ const App: React.FC = () => {
               <button 
                 className="w-full bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-yellow-900 font-black py-3 md:py-4 rounded-xl md:rounded-[25px] border-b-4 md:border-b-[8px] border-yellow-700 transition-all uppercase flex items-center justify-center gap-3 text-xs md:text-sm shadow-lg mt-4"
                 onClick={() => {
+                  console.log("Attempting to play /sound.mp3");
                   const audio = new Audio('/sound.mp3');
-                  audio.play().catch(e => alert("Audio playback failed: " + e.message + "\nPlease interact with the page first."));
+                  audio.volume = 1.0;
+                  audio.play()
+                    .then(() => console.log("Playback started"))
+                    .catch(e => {
+                      console.error("Audio playback failed:", e);
+                      alert("Audio playback failed: " + e.message + "\n\n1. Interact with the page first\n2. Check volume\n3. Check if sound.mp3 exists");
+                    });
                 }}
               >
-                <i className="fa-solid fa-volume-high text-lg md:text-xl"></i>
-                Test Alarm Sound
+                <i className="fa-solid fa-volume-high"></i>
+                Test Alarm Sound (MP3)
               </button>
 
               <div className="grid grid-cols-2 gap-4 md:gap-6">

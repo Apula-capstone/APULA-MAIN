@@ -26,17 +26,17 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
           const ctx = new AudioContextClass();
           audioContextRef.current = ctx;
 
-          // Load the WAV file
-          fetch('/sound.wav')
+          // Load the MP3 file
+          fetch('/sound.mp3')
             .then(response => response.arrayBuffer())
             .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
             .then(audioBuffer => {
               bufferRef.current = audioBuffer;
-              setAudioStatus("WAV Siren Loaded");
+              setAudioStatus("MP3 Siren Loaded");
             })
             .catch(e => {
-              console.error("Failed to load WAV:", e);
-              setAudioStatus("Error Loading WAV");
+              console.error("Failed to load MP3:", e);
+              setAudioStatus("Error Loading MP3");
             });
 
           // Create Gain Node for Volume
@@ -83,7 +83,7 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
       source.start(0);
       
       sourceRef.current = source;
-      setAudioStatus("Playing (WAV Siren)");
+      setAudioStatus("Playing (MP3 Siren)");
       setAudioError(null);
 
     } catch (e: any) {
@@ -145,7 +145,7 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
           </div>
 
           {/* Force Play Button - Always available if not playing */}
-          {audioStatus !== "Playing (WAV Siren)" && (
+          {audioStatus !== "Playing (MP3 Siren)" && (
              <button 
               onClick={() => playAlarmSound()}
               className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg animate-pulse"

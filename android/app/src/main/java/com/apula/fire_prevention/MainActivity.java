@@ -109,7 +109,7 @@ public class MainActivity extends BridgeActivity {
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 String path = request.getUrl().getPath();
 
-                if (getBridge().getLocalServer().isLocalRequest(request.getUrl()) && path != null && path.startsWith("/APULA-MAIN")) {
+                if (request.getUrl().getHost() != null && request.getUrl().getHost().equalsIgnoreCase("localhost") && path != null && path.startsWith("/APULA-MAIN")) {
                     String newPath = path.substring("/APULA-MAIN".length());
                     if (newPath.isEmpty() || newPath.equals("/")) {
                         newPath = "/index.html";

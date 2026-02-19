@@ -7,127 +7,113 @@ interface Props {
 }
 
 const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const bufferRef = useRef<AudioBuffer | null>(null);
+  const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null); // Kept for JSX compatibility
+
   const [audioError, setAudioError] = React.useState<string | null>(null);
   const [audioStatus, setAudioStatus] = React.useState<string>("Initializing...");
 
   useEffect(() => {
-    if (isActive) {
-      // Check if running on Android
-      const isAndroid = !!(window as any).Android;
-      console.log("AlarmSystem: isActive=true, isAndroid=", isAndroid);
-
-      // If on Android, we rely on Native Audio (triggered by App.tsx -> MainActivity.java)
-      if (isAndroid) {
-        setAudioStatus("Handled by Android Native");
-        return; 
-      }
-
-      const initializeAudio = async () => {
+    // Initialize Audio Context on first interaction or mount
+    const initAudio = () => {
+      if (!audioContextRef.current) {
         try {
-          setAudioStatus("Loading Audio...");
-          if (!audioRef.current) {
-              // Create Audio element
-              console.log("Initializing Alarm Audio...");
-              const audio = new Audio('/sound.mp3');
-              audio.loop = true;
-              audio.volume = 1.0; 
-              audioRef.current = audio;
+          // Use window.AudioContext if available
+          const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+          const ctx = new AudioContextClass();
+          audioContextRef.current = ctx;
 
-              // Web Audio API for extra amplification (Gain)
-              try {
-                const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
-                if (AudioContextClass) {
-                  const audioCtx = new AudioContextClass();
-                  audioContextRef.current = audioCtx;
-                  
-                  const source = audioCtx.createMediaElementSource(audio);
-                  sourceNodeRef.current = source;
-                  
-                  const gainNode = audioCtx.createGain();
-                  // Set gain to 3.0 (300% volume) for Maximum Loudness
-                  gainNode.gain.value = 3.0; 
-                  gainNodeRef.current = gainNode;
-                  
-                  source.connect(gainNode);
-                  gainNode.connect(audioCtx.destination);
-                  console.log("Web Audio API initialized with Gain 3.0 (MAX)");
-                }
-              } catch (e) {
-                console.error("Web Audio API setup failed, falling back to standard audio", e);
-              }
-          }
-          
-          if (audioRef.current) {
-            // Resume context if suspended (browser policy)
-            if (audioContextRef.current?.state === 'suspended') {
-              try {
-                await audioContextRef.current.resume();
-              } catch (e) {
-                console.warn("Audio Context resume failed (interaction needed)", e);
-              }
-            }
-            
-            const playPromise = audioRef.current.play();
-            if (playPromise !== undefined) {
-              playPromise
-                 .then(() => {
-                   setAudioStatus("Playing (300% Volume)");
-                   setAudioError(null);
-                 })
-                .catch(error => {
-                  console.error("Audio playback failed:", error);
-                  setAudioStatus("Playback Blocked");
-                  if (error.name === 'NotAllowedError') {
-                    setAudioError("Browser blocked audio. Click 'Enable Sound' below.");
-                  } else {
-                    setAudioError(`Audio Error: ${error.message}`);
-                  }
-                });
-            }
-          }
-        } catch (error: any) {
-          console.error("General Audio Error:", error);
-          setAudioStatus("System Error");
-          setAudioError(`Audio System Error: ${error.message || error}`);
+          // Load the WAV file
+          fetch('/sound.wav')
+            .then(response => response.arrayBuffer())
+            .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
+            .then(audioBuffer => {
+              bufferRef.current = audioBuffer;
+              setAudioStatus("WAV Siren Loaded");
+            })
+            .catch(e => {
+              console.error("Failed to load WAV:", e);
+              setAudioStatus("Error Loading WAV");
+            });
+
+          // Create Gain Node for Volume
+          const gainNode = ctx.createGain();
+          gainNode.gain.value = 3.0; // 300% Volume (Max)
+          gainNode.connect(ctx.destination);
+          gainNodeRef.current = gainNode;
+
+        } catch (e) {
+          console.error("Audio Init Error:", e);
         }
-      };
-
-      initializeAudio();
-
-    } else {
-      // Stop and reset
-      setAudioStatus("Stopped");
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
       }
+    };
+
+    // Try to init immediately (might be blocked by autoplay policy)
+    initAudio();
+    
+    // Also init on any click to unlock AudioContext
+    window.addEventListener('click', () => {
+      if (audioContextRef.current?.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+    }, { once: true });
+
+  }, []);
+
+  const playAlarmSound = async () => {
+    if (!audioContextRef.current || !bufferRef.current || !gainNodeRef.current) {
+      setAudioStatus("Audio Not Ready");
+      return;
     }
 
-    return () => {
-      // Cleanup is handled better in a separate effect or just ensure pause on unmount
-      // But for this component which might unmount/remount, we should be careful.
-      // If isActive becomes false, we pause.
-      // If component unmounts, we should cleanup context.
-    };
-  }, [isActive]);
+    try {
+      // Resume context if suspended (autoplay policy)
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
 
-  // Cleanup on unmount
+      // Create source from buffer
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = bufferRef.current;
+      source.loop = true;
+      source.connect(gainNodeRef.current);
+      source.start(0);
+      
+      sourceRef.current = source;
+      setAudioStatus("Playing (WAV Siren)");
+      setAudioError(null);
+
+    } catch (e: any) {
+      console.error("Playback Error:", e);
+      setAudioError(e.message);
+      setAudioStatus("Playback Failed");
+    }
+  };
+
+  const stopAlarmSound = () => {
+    if (sourceRef.current) {
+      try {
+        sourceRef.current.stop();
+        sourceRef.current.disconnect();
+        sourceRef.current = null;
+        setAudioStatus("Stopped");
+      } catch (e) {
+        console.error("Stop Error:", e);
+      }
+    }
+  };
+
   useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-        audioContextRef.current = null;
-      }
-    };
-  }, []);
+    if (isActive) {
+      playAlarmSound();
+    } else {
+      stopAlarmSound();
+    }
+    return () => stopAlarmSound();
+  }, [isActive]);
 
   if (!isActive) return null;
 
@@ -159,19 +145,9 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
           </div>
 
           {/* Force Play Button - Always available if not playing */}
-          {audioStatus !== "Playing (300% Volume)" && (
+          {audioStatus !== "Playing (WAV Siren)" && (
              <button 
-              onClick={() => {
-                if (audioContextRef.current) audioContextRef.current.resume();
-                if (audioRef.current) {
-                  audioRef.current.play()
-                    .then(() => {
-                      setAudioStatus("Playing (300% Volume)");
-                      setAudioError(null);
-                    })
-                    .catch(e => setAudioError(e.message));
-                }
-              }}
+              onClick={() => playAlarmSound()}
               className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg animate-pulse"
             >
               <i className="fa-solid fa-volume-high mr-2"></i>

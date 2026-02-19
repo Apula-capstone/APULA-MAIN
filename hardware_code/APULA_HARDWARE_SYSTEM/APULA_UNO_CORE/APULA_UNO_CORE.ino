@@ -88,40 +88,44 @@
      // ADDED: Signal for Website Alarm
      Serial.println("SENSORS:FIRE_DETECTED"); 
      
+     // IMMEDIATE LOUD ALARM (Panic Mode)
+     digitalWrite(buzzerPin, HIGH);
+     
      Serial.print("Fire detected at angle: "); 
      Serial.println(fireAngle); 
- 
+
      // Turn off green LED 
      digitalWrite(greenLED, LOW); 
- 
+
      // Start blinking red LED while spraying water 
      unsigned long startTime = millis(); 
      digitalWrite(relayPin, HIGH);   // Turn ON pump 
- 
+
      // Smoothly move MG995 to INVERTED fire angle 
      int invertedAngle = 180 - fireAngle; // Invert direction 
- 
+
      int currentHose = hoseServo.read(); 
      int step = (invertedAngle > currentHose) ? 1 : -1; 
- 
+
      while(currentHose != invertedAngle) 
      { 
        currentHose += step; 
        hoseServo.write(currentHose); 
        delay(10); // Adjust speed here 
      } 
- 
-     // Keep spraying for 5 seconds while blinking red LED 
+
+     // Keep spraying for 5 seconds while blinking red LED and pulsing Alarm
+     // 5 seconds of aggressive alarm (100ms ON/OFF)
      while(millis() - startTime < 5000) 
      { 
        digitalWrite(redLED, HIGH); 
        digitalWrite(buzzerPin, HIGH); // Alarm ON
-       delay(250); 
+       delay(100); 
        digitalWrite(redLED, LOW); 
        digitalWrite(buzzerPin, LOW);  // Alarm OFF
-       delay(250); 
+       delay(100); 
      } 
- 
+
      digitalWrite(relayPin, LOW);    // Turn OFF pump 
      digitalWrite(greenLED, HIGH);   // Green LED back ON 
      digitalWrite(buzzerPin, LOW);   // Ensure alarm is OFF

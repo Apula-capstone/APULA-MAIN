@@ -14,6 +14,15 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
 
   useEffect(() => {
     if (isActive) {
+      // Check if running on Android
+      const isAndroid = !!(window as any).Android;
+
+      // If on Android, we rely on Native Audio (triggered by App.tsx -> MainActivity.java)
+      // This ensures 100% native volume without Web Audio interference/doubling.
+      if (isAndroid) {
+        return; 
+      }
+
       if (!audioRef.current) {
           // Create Audio element
           // Use absolute path for reliability across routes
@@ -33,8 +42,8 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
               sourceNodeRef.current = source;
               
               const gainNode = audioCtx.createGain();
-              // Set gain to 3.0 (300% volume) - might clip but will be LOUD
-              gainNode.gain.value = 3.0; 
+              // Set gain to 2.0 (200% volume) as requested for Web
+              gainNode.gain.value = 2.0; 
               gainNodeRef.current = gainNode;
               
               source.connect(gainNode);
@@ -43,15 +52,17 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
           } catch (e) {
             console.error("Web Audio API setup failed, falling back to standard audio", e);
           }
-        }
+      }
       
       const playAudio = async () => {
         try {
-          // Resume context if suspended (browser policy)
-          if (audioContextRef.current?.state === 'suspended') {
-            await audioContextRef.current.resume();
+          if (audioRef.current) {
+            // Resume context if suspended (browser policy)
+            if (audioContextRef.current?.state === 'suspended') {
+              await audioContextRef.current.resume();
+            }
+            await audioRef.current.play();
           }
-          await audioRef.current?.play();
         } catch (error) {
           console.error("Audio playback failed:", error);
         }

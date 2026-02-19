@@ -48,13 +48,13 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
                   sourceNodeRef.current = source;
                   
                   const gainNode = audioCtx.createGain();
-                  // Set gain to 2.0 (200% volume) as requested for Web
-                  gainNode.gain.value = 2.0; 
+                  // Set gain to 3.0 (300% volume) for Maximum Loudness
+                  gainNode.gain.value = 3.0; 
                   gainNodeRef.current = gainNode;
                   
                   source.connect(gainNode);
                   gainNode.connect(audioCtx.destination);
-                  console.log("Web Audio API initialized with Gain 2.0");
+                  console.log("Web Audio API initialized with Gain 3.0 (MAX)");
                 }
               } catch (e) {
                 console.error("Web Audio API setup failed, falling back to standard audio", e);
@@ -74,10 +74,10 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
             const playPromise = audioRef.current.play();
             if (playPromise !== undefined) {
               playPromise
-                .then(() => {
-                  setAudioStatus("Playing (200% Volume)");
-                  setAudioError(null);
-                })
+                 .then(() => {
+                   setAudioStatus("Playing (300% Volume)");
+                   setAudioError(null);
+                 })
                 .catch(error => {
                   console.error("Audio playback failed:", error);
                   setAudioStatus("Playback Blocked");
@@ -159,14 +159,14 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
           </div>
 
           {/* Force Play Button - Always available if not playing */}
-          {audioStatus !== "Playing (200% Volume)" && (
+          {audioStatus !== "Playing (300% Volume)" && (
              <button 
               onClick={() => {
                 if (audioContextRef.current) audioContextRef.current.resume();
                 if (audioRef.current) {
                   audioRef.current.play()
                     .then(() => {
-                      setAudioStatus("Playing (200% Volume)");
+                      setAudioStatus("Playing (300% Volume)");
                       setAudioError(null);
                     })
                     .catch(e => setAudioError(e.message));

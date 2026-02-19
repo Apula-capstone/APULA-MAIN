@@ -28,8 +28,14 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
           audioContextRef.current = ctx;
 
           // Load the MP3 file
-          fetch('/sound.mp3')
-            .then(response => response.arrayBuffer())
+          const soundPath = import.meta.env.BASE_URL + 'sound.mp3';
+          console.log("Loading sound from:", soundPath);
+
+          fetch(soundPath)
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.arrayBuffer();
+            })
             .then(arrayBuffer => ctx.decodeAudioData(arrayBuffer))
             .then(audioBuffer => {
               bufferRef.current = audioBuffer;
@@ -38,7 +44,7 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
             })
             .catch(e => {
               console.error("Failed to load MP3:", e);
-              setAudioStatus("Error Loading MP3");
+              setAudioStatus("Error Loading MP3: " + e.message);
             });
 
           // Create Gain Node for Volume
@@ -108,16 +114,17 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
       setAudioStatus("Playback Failed");
       
       // Fallback to HTML5 Audio if Web Audio API fails
-      try {
-          const fallbackAudio = new Audio('/sound.mp3');
-          fallbackAudio.loop = true;
-          fallbackAudio.volume = 1.0;
-          await fallbackAudio.play();
-          audioRef.current = fallbackAudio; // Store ref to stop later
-          setAudioStatus("Playing (HTML5 Fallback)");
-      } catch (fallbackError: any) {
-          setAudioStatus("ALL AUDIO FAILED: " + fallbackError.message);
-      }
+       try {
+           const soundPath = import.meta.env.BASE_URL + 'sound.mp3';
+           const fallbackAudio = new Audio(soundPath);
+           fallbackAudio.loop = true;
+           fallbackAudio.volume = 1.0;
+           await fallbackAudio.play();
+           audioRef.current = fallbackAudio; // Store ref to stop later
+           setAudioStatus("Playing (HTML5 Fallback)");
+       } catch (fallbackError: any) {
+           setAudioStatus("ALL AUDIO FAILED: " + fallbackError.message);
+       }
     }
   };
 

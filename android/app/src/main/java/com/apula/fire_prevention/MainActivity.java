@@ -111,6 +111,9 @@ public class MainActivity extends BridgeActivity {
 
                 if (getBridge().getLocalServer().isLocalRequest(request) && path != null && path.startsWith("/APULA-MAIN")) {
                     String newPath = path.substring("/APULA-MAIN".length());
+                    if (newPath.isEmpty() || newPath.equals("/")) {
+                        newPath = "/index.html";
+                    }
                     return getBridge().getLocalServer().shouldInterceptRequest(new PatchedRequest(request, newPath));
                 }
 

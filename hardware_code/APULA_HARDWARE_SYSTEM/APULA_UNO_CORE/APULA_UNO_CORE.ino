@@ -15,6 +15,7 @@
  const int relayPin = 6;        // Water pump relay 
  const int greenLED = 7;        // No fire 
  const int redLED = 8;          // Fire indicator 
+ const int buzzerPin = 5;       // Loud Panic Alarm
  
  Servo servo1; 
  Servo servo2; 
@@ -31,10 +32,12 @@
    pinMode(relayPin, OUTPUT); 
    pinMode(greenLED, OUTPUT); 
    pinMode(redLED, OUTPUT); 
+   pinMode(buzzerPin, OUTPUT);
  
    digitalWrite(relayPin, LOW); 
    digitalWrite(greenLED, HIGH); // Green LED ON at start 
    digitalWrite(redLED, LOW); 
+   digitalWrite(buzzerPin, LOW); 
  
    servo1.attach(servo1Pin); 
    servo2.attach(servo2Pin); 
@@ -112,13 +115,16 @@
      while(millis() - startTime < 5000) 
      { 
        digitalWrite(redLED, HIGH); 
+       digitalWrite(buzzerPin, HIGH); // Alarm ON
        delay(250); 
        digitalWrite(redLED, LOW); 
+       digitalWrite(buzzerPin, LOW);  // Alarm OFF
        delay(250); 
      } 
  
      digitalWrite(relayPin, LOW);    // Turn OFF pump 
      digitalWrite(greenLED, HIGH);   // Green LED back ON 
+     digitalWrite(buzzerPin, LOW);   // Ensure alarm is OFF
      
      // ADDED: Reset Signal for Website
      Serial.println("SENSORS:SAFE"); 

@@ -12,23 +12,25 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const [audioError, setAudioError] = React.useState<string | null>(null);
+  const [audioStatus, setAudioStatus] = React.useState<string>("Initializing...");
 
   useEffect(() => {
     if (isActive) {
       // Check if running on Android
       const isAndroid = !!(window as any).Android;
+      console.log("AlarmSystem: isActive=true, isAndroid=", isAndroid);
 
       // If on Android, we rely on Native Audio (triggered by App.tsx -> MainActivity.java)
-      // This ensures 100% native volume without Web Audio interference/doubling.
       if (isAndroid) {
+        setAudioStatus("Handled by Android Native");
         return; 
       }
 
       const initializeAudio = async () => {
         try {
+          setAudioStatus("Loading Audio...");
           if (!audioRef.current) {
               // Create Audio element
-              // Use absolute path for reliability across routes
               console.log("Initializing Alarm Audio...");
               const audio = new Audio('/sound.mp3');
               audio.loop = true;
@@ -62,23 +64,34 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
           if (audioRef.current) {
             // Resume context if suspended (browser policy)
             if (audioContextRef.current?.state === 'suspended') {
-              await audioContextRef.current.resume();
+              try {
+                await audioContextRef.current.resume();
+              } catch (e) {
+                console.warn("Audio Context resume failed (interaction needed)", e);
+              }
             }
             
             const playPromise = audioRef.current.play();
             if (playPromise !== undefined) {
-              playPromise.catch(error => {
-                console.error("Audio playback failed:", error);
-                if (error.name === 'NotAllowedError') {
-                  setAudioError("Browser blocked audio. Click 'Enable Sound' below.");
-                } else {
-                  setAudioError(`Audio Error: ${error.message}`);
-                }
-              });
+              playPromise
+                .then(() => {
+                  setAudioStatus("Playing (200% Volume)");
+                  setAudioError(null);
+                })
+                .catch(error => {
+                  console.error("Audio playback failed:", error);
+                  setAudioStatus("Playback Blocked");
+                  if (error.name === 'NotAllowedError') {
+                    setAudioError("Browser blocked audio. Click 'Enable Sound' below.");
+                  } else {
+                    setAudioError(`Audio Error: ${error.message}`);
+                  }
+                });
             }
           }
         } catch (error: any) {
           console.error("General Audio Error:", error);
+          setAudioStatus("System Error");
           setAudioError(`Audio System Error: ${error.message || error}`);
         }
       };
@@ -87,6 +100,7 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
 
     } else {
       // Stop and reset
+      setAudioStatus("Stopped");
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
@@ -138,21 +152,40 @@ const AlarmSystem: React.FC<Props> = ({ isActive, onAcknowledge }) => {
         </div>
         
         {/* Error Message if Audio Fails */}
-        {audioError && (
-          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 w-full" role="alert">
-            <p className="font-bold">Audio Blocked</p>
-            <p>{audioError}</p>
-            <button 
+        <div className="w-full space-y-2">
+          {/* Always show status for debugging */}
+          <div className="text-[10px] md:text-xs font-mono uppercase tracking-widest text-stone-500 bg-stone-100 p-2 rounded">
+            Audio Status: {audioStatus}
+          </div>
+
+          {/* Force Play Button - Always available if not playing */}
+          {audioStatus !== "Playing (200% Volume)" && (
+             <button 
               onClick={() => {
                 if (audioContextRef.current) audioContextRef.current.resume();
-                if (audioRef.current) audioRef.current.play().then(() => setAudioError(null));
+                if (audioRef.current) {
+                  audioRef.current.play()
+                    .then(() => {
+                      setAudioStatus("Playing (200% Volume)");
+                      setAudioError(null);
+                    })
+                    .catch(e => setAudioError(e.message));
+                }
               }}
-              className="mt-2 bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg animate-pulse"
             >
-              ENABLE SOUND
+              <i className="fa-solid fa-volume-high mr-2"></i>
+              FORCE ENABLE SOUND
             </button>
-          </div>
-        )}
+          )}
+
+          {audioError && (
+            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 w-full text-left" role="alert">
+              <p className="font-bold">Audio Blocked</p>
+              <p>{audioError}</p>
+            </div>
+          )}
+        </div>
 
         {/* Text Section: Adjusting sizes for different viewports */}
         <div className="space-y-1 md:space-y-4 overflow-y-auto min-h-0">

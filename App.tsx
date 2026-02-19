@@ -391,6 +391,17 @@ const App: React.FC = () => {
                 Simulate Panic
               </button>
 
+              <button 
+                className="w-full bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-yellow-900 font-black py-3 md:py-4 rounded-xl md:rounded-[25px] border-b-4 md:border-b-[8px] border-yellow-700 transition-all uppercase flex items-center justify-center gap-3 text-xs md:text-sm shadow-lg mt-4"
+                onClick={() => {
+                  const audio = new Audio('/sound.mp3');
+                  audio.play().catch(e => alert("Audio playback failed: " + e.message + "\nPlease interact with the page first."));
+                }}
+              >
+                <i className="fa-solid fa-volume-high text-lg md:text-xl"></i>
+                Test Alarm Sound
+              </button>
+
               <div className="grid grid-cols-2 gap-4 md:gap-6">
                 <button 
                   onClick={() => setFireIncidentCount(0)}

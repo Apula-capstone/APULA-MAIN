@@ -79,6 +79,17 @@ const App: React.FC = () => {
     const raw = data.trim().toUpperCase();
     if (isTestActive) return;
 
+    // Support for Legacy/Simple Arduino Code
+    if (raw.includes("FIRE DETECTED AT ANGLE")) {
+        setSensors(prev => prev.map(s => ({
+            ...s,
+            status: SensorStatus.FIRE_DETECTED,
+            value: 100,
+            lastUpdated: new Date().toLocaleTimeString()
+        })));
+        return;
+    }
+
     if (raw === "SENSORS:FIRE_DETECTED") {
         setSensors(prev => prev.map(s => ({
             ...s,

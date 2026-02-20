@@ -37,6 +37,7 @@ const App: React.FC = () => {
   const serialPortRef = useRef<any>(null);
   const serialBufferRef = useRef<string>("");
   const fireInCurrentTurn = useRef(false);
+  const lastFireTimeRef = useRef<number>(0);
 
   const handleLoadingFinished = () => {
     setIsLoading(false);
@@ -54,6 +55,7 @@ const App: React.FC = () => {
       setIsAlarmActive(true);
       setFireIncidentCount(prev => prev + 1);
       fireInCurrentTurn.current = true;
+      lastFireTimeRef.current = Date.now(); // Initialize timer
 
       // Send Browser Notification
       notificationService.notify('🔥 FIRE ALERT: APULA SYSTEM', {
@@ -75,12 +77,33 @@ const App: React.FC = () => {
     }
   }, [sensors, isAlarmActive]);
 
+  // AUTO-RESET ALARM IF SILENT FOR > 8 SECONDS
+  useEffect(() => {
+    if (!isAlarmActive) return;
+
+    const interval = setInterval(() => {
+        const timeSinceLastFire = Date.now() - lastFireTimeRef.current;
+        if (timeSinceLastFire > 8000) {
+            console.log("Auto-resetting alarm due to silence");
+            setIsAlarmActive(false);
+            setSensors(prev => prev.map(s => ({ 
+                ...s, 
+                status: SensorStatus.READY,
+                value: 0
+            })));
+        }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isAlarmActive]);
+
   const processSensorData = useCallback((data: string) => {
     const raw = data.trim().toUpperCase();
     if (isTestActive) return;
 
     // Support for Legacy/Simple Arduino Code
     if (raw.includes("FIRE DETECTED AT ANGLE")) {
+        lastFireTimeRef.current = Date.now();
         setSensors(prev => prev.map(s => ({
             ...s,
             status: SensorStatus.FIRE_DETECTED,
@@ -91,6 +114,7 @@ const App: React.FC = () => {
     }
 
     if (raw === "SENSORS:FIRE_DETECTED") {
+        lastFireTimeRef.current = Date.now();
         setSensors(prev => prev.map(s => ({
             ...s,
             status: SensorStatus.FIRE_DETECTED,

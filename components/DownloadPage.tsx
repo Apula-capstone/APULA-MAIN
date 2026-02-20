@@ -64,7 +64,7 @@ const DownloadPage: React.FC<Props> = ({ onBack }) => {
               </p>
               <div className="flex flex-col gap-3">
                 <a 
-                  href="https://drive.google.com/file/d/1oSfCZ6sVAGW7mhJpXBogF8ZpEWVtSlgM/view?usp=sharing" 
+                  href="https://drive.google.com/file/d/13rKP7LrHmCskE85xGiZ4QFlY_jApSQXb/view?usp=sharing" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full inline-flex items-center justify-center gap-4 bg-stone-950 text-white font-black px-6 py-4 rounded-2xl uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl text-sm"

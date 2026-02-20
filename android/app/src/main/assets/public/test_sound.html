@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sound Test</title>
+</head>
+<body>
+    <h1>Sound Test</h1>
+    <p>Click the button below to test the sound file directly.</p>
+    <audio id="player" controls>
+        <source src="sound.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    <br><br>
+    <button onclick="document.getElementById('player').play()">Play Sound</button>
+    <p>File: <a href="sound.mp3">sound.mp3</a></p>
+</body>
+</html>

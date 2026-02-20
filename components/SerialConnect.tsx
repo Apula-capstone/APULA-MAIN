@@ -24,7 +24,7 @@ const SerialConnect: React.FC<Props> = ({ state, onData, onConnect, onDisconnect
       }
 
       const port = await (navigator as any).serial.requestPort();
-      await port.open({ baudRate: 115200 });
+      await port.open({ baudRate: 9600 });
       portRef.current = port;
       onConnect(port);
 

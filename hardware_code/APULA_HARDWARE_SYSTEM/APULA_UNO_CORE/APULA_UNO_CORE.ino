@@ -1,6 +1,21 @@
 #if defined(ARDUINO_AVR_UNO) || defined(__AVR_ATmega328P__)
 
+// ======================================================
+// CONFIGURATION FOR ARDUINO UNO (SENSORS)
+// ======================================================
+// This code is for the Main Sensor Arduino ONLY.
+// It detects fire, controls servos, and activates the pump/alarm.
+// ======================================================
+
 #include <Servo.h> 
+#include <SoftwareSerial.h>
+
+// -------- ESP32-CAM COMMUNICATION --------
+// We use SoftwareSerial to talk to the ESP32-CAM
+// Arduino Pin 4 (RX) -> ESP32 Pin U0T (TX)
+// Arduino Pin 5 (TX) -> ESP32 Pin U0R (RX)
+// GND -> GND
+SoftwareSerial espSerial(4, 5); // RX, TX
 
 // -------- FLAME SENSORS -------- 
 const int flame1 = 2; 
@@ -45,8 +60,13 @@ void setup()
   servo2.attach(servo2Pin); 
   hoseServo.attach(hoseServoPin); 
 
-  // CHANGED: 115200 for ESP32 compatibility (User original: 9600)
-  Serial.begin(115200); 
+  // Debugging Serial (USB to PC)
+  Serial.begin(9600); 
+  
+  // ESP32 Communication Serial
+  espSerial.begin(9600);
+  
+  Serial.println("ARDUINO 1 (SENSORS) READY");
 } 
 
 void loop() 
@@ -86,12 +106,10 @@ void loop()
   // -------- FIRE DETECTED -------- 
   if(fireDetected) 
   { 
-    // ADDED: Signal for Website Alarm
+    // Send to BOTH Serial (USB) and SoftwareSerial (ESP32)
     Serial.println("SENSORS:FIRE_DETECTED"); 
+    espSerial.println("SENSORS:FIRE_DETECTED");
     
-    Serial.print("Fire detected at angle: "); 
-    Serial.println(fireAngle); 
-
     digitalWrite(greenLED, LOW); 
     digitalWrite(relayPin, HIGH); 
 
@@ -124,6 +142,11 @@ void loop()
     digitalWrite(greenLED, HIGH); 
     noTone(buzzerPin); 
   } 
-}
-
+  else
+  {
+    // NO FIRE DETECTED
+    Serial.println("SENSORS:SAFE");
+    espSerial.println("SENSORS:SAFE");
+  }
+} 
 #endif
